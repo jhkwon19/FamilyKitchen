@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ko" data-variant="pc">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>우리 부엌 레시피 보관함 · PC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=17">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__content">
+      <p class="eyebrow">우리 둘만의 레시피 링크함</p>
+      <h1>레시피 링크 모아 공유하기</h1>
+      <p class="lede">
+        유튜브, 쇼츠, 블로그 링크를 모아두고 메모를 남기세요.
+        원하는 레시피를 한 번에 찾아서 서로에게 공유할 수 있습니다.
+      </p>
+      <div class="hero__actions">
+        <button id="newRecipeBtn" class="btn btn-primary desktop-only">새 레시피 추가</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-only toggle-wrap top-toggle">
+    <button id="toggleFormBtn" class="btn btn-primary">레시피 추가하기</button>
+  </div>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="panel__header">
+        <h2>저장된 레시피</h2>
+        <div class="filter">
+          <input id="searchInput" type="search" placeholder="제목, 태그, 메모 검색">
+          <select id="sortSelect">
+            <option value="newest">최신순</option>
+            <option value="oldest">오래된순</option>
+            <option value="title">제목순</option>
+          </select>
+        </div>
+      </div>
+      <div id="recipeList" class="recipes"></div>
+      <p id="emptyState" class="muted">아직 저장된 레시피가 없습니다. 위에 링크를 추가해보세요.</p>
+    </section>
+  </main>
+
+  <div id="drawer" class="drawer">
+    <div class="drawer__backdrop" id="drawerBackdrop"></div>
+    <div class="drawer__panel">
+        <div class="drawer__header">
+        <div>
+          <p class="eyebrow" id="recipeDrawerEyebrow">레시피 등록</p>
+          <h2 id="recipeDrawerTitle"></h2>
+        </div>
+        <button id="closeDrawerBtn" class="icon-btn" aria-label="닫기">✕</button>
+      </div>
+      <form id="recipeForm" class="form">
+        <div class="form__row">
+          <label for="title">제목</label>
+          <input id="title" name="title" type="text" placeholder="예: 백종원 김치찌개, 크리스피 치킨" required>
+        </div>
+        <div class="form__row">
+          <label for="url">링크</label>
+          <input id="url" name="url" type="url" placeholder="https://youtu.be/..." required>
+        </div>
+        <div class="form__row">
+          <label for="notes">메모</label>
+          <textarea id="notes" name="notes" rows="3" placeholder="맛포인트, 재료비, 우리집 버전"></textarea>
+        </div>
+        <div class="form__grid">
+          <div class="form__row">
+            <label for="tags">태그</label>
+            <input id="tags" name="tags" type="text" placeholder="한식, 초간단, 캠핑">
+          </div>
+          <div class="form__row">
+            <label for="source">출처</label>
+            <select id="source" name="source">
+              <option value="youtube">YouTube / Shorts</option>
+              <option value="blog">블로그</option>
+              <option value="instagram">인스타 / 릴스</option>
+              <option value="other">기타</option>
+            </select>
+          </div>
+        </div>
+        <div class="form__row">
+          <label>준비 재료</label>
+          <div class="ingredient-inputs">
+            <input id="ingredientInput" type="text" placeholder="예: 꼬막살">
+            <input id="ingredientAmount" type="text" placeholder="예: 600g">
+            <button type="button" id="addIngredientBtn" class="btn btn-ghost">추가</button>
+          </div>
+          <ul id="ingredientList" class="ingredient-list"></ul>
+        </div>
+        <div class="form__actions">
+          <button type="submit" class="btn btn-primary">저장</button>
+          <button type="button" id="resetBtn" class="btn btn-ghost">입력 초기화</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <template id="recipeCardTemplate">
+    <article class="recipe">
+      <div class="recipe__header">
+        <div>
+          <p class="badge" data-source></p>
+          <h3 data-title></h3>
+          <p class="recipe__meta" data-tags></p>
+        </div>
+        <div class="recipe__actions">
+          <button class="icon-btn" data-open title="링크 열기">🔗</button>
+          <button class="icon-btn" data-edit title="수정">✎</button>
+          <button class="icon-btn" data-delete title="삭제">🗑️</button>
+        </div>
+      </div>
+      <p class="recipe__notes" data-notes></p>
+      <div class="ingredients">
+        <div class="ingredients__header">
+          <p class="badge badge--muted">재료</p>
+          <button class="icon-btn" data-add-ingredient title="재료 편집">✎</button>
+        </div>
+        <ul class="ingredient-chips" data-ingredients></ul>
+      </div>
+      <div class="recipe__preview" data-preview></div>
+    </article>
+  </template>
+
+  <div id="ingredientDrawer" class="drawer drawer--modal">
+    <div class="drawer__backdrop" id="ingDrawerBackdrop"></div>
+    <div class="drawer__panel">
+      <div class="drawer__header">
+        <div>
+          <p class="eyebrow">재료 추가</p>
+          <h2>이 레시피에 재료 더하기</h2>
+        </div>
+        <button id="closeIngDrawerBtn" class="icon-btn" aria-label="닫기">✕</button>
+      </div>
+      <div class="form">
+        <div class="form__row">
+          <label for="ingModalName">재료명</label>
+          <input id="ingModalName" type="text" placeholder="예: 미나리">
+        </div>
+        <div class="form__row">
+          <label for="ingModalAmount">수량/단위</label>
+          <input id="ingModalAmount" type="text" placeholder="예: 100g, 2큰술">
+        </div>
+        <div class="form__actions">
+          <button type="button" id="ingModalAddBtn" class="btn btn-primary">추가</button>
+        </div>
+        <ul id="ingModalList" class="ingredient-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=16" type="module"></script>
+</body>
+</html>
