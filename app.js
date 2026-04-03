@@ -719,6 +719,85 @@ function updateRecipeDrawerCopy(isEdit) {
   if (recipeDrawerTitle) recipeDrawerTitle.textContent = '';
 }
 
+function initPullToRefresh() {
+  if (document.documentElement.dataset.variant !== 'mobile') return;
+
+  const indicator = document.createElement('div');
+  indicator.className = 'pull-refresh-indicator';
+  indicator.textContent = '당겨서 새로고침';
+  document.body.appendChild(indicator);
+
+  let tracking = false;
+  let startY = 0;
+  let pullDistance = 0;
+
+  const resetIndicator = () => {
+    indicator.classList.remove('is-visible', 'is-ready');
+    indicator.style.removeProperty('--pull-offset');
+  };
+
+  const shouldIgnoreTarget = target => (
+    target instanceof Element &&
+    Boolean(target.closest('input, textarea, select, button, a, .drawer__panel'))
+  );
+
+  window.addEventListener('touchstart', event => {
+    if (event.touches.length !== 1) return;
+    if (window.scrollY > 0) return;
+    if (drawer?.classList.contains('open') || ingDrawer?.classList.contains('open')) return;
+    if (shouldIgnoreTarget(event.target)) return;
+
+    tracking = true;
+    startY = event.touches[0].clientY;
+    pullDistance = 0;
+    resetIndicator();
+  }, { passive: true });
+
+  window.addEventListener('touchmove', event => {
+    if (!tracking) return;
+    pullDistance = Math.max(0, event.touches[0].clientY - startY);
+    if (pullDistance <= 0) {
+      resetIndicator();
+      return;
+    }
+
+    const offset = Math.min(pullDistance * 0.45, 72);
+    indicator.classList.add('is-visible');
+    indicator.style.setProperty('--pull-offset', `${offset}px`);
+
+    if (pullDistance >= 90) {
+      indicator.classList.add('is-ready');
+      indicator.textContent = '놓으면 새로고침';
+    } else {
+      indicator.classList.remove('is-ready');
+      indicator.textContent = '당겨서 새로고침';
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    if (!tracking) return;
+
+    const shouldRefresh = window.scrollY === 0 && pullDistance >= 90;
+    tracking = false;
+
+    if (shouldRefresh) {
+      indicator.classList.add('is-visible');
+      indicator.classList.remove('is-ready');
+      indicator.textContent = '새로고침 중...';
+      indicator.style.setProperty('--pull-offset', '48px');
+      window.location.reload();
+      return;
+    }
+
+    resetIndicator();
+  }, { passive: true });
+
+  window.addEventListener('touchcancel', () => {
+    tracking = false;
+    resetIndicator();
+  }, { passive: true });
+}
+
 form.addEventListener('submit', handleSubmit);
 searchInput.addEventListener('input', handleSearch);
 sortSelect.addEventListener('change', handleSort);
@@ -738,5 +817,6 @@ window.addEventListener('keydown', e => {
   }
 });
 
+initPullToRefresh();
 fetchRecipes().catch(err => alert(err.message));
 renderIngredientDrafts();
