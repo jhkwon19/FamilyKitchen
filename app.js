@@ -431,13 +431,10 @@ function buildRecipeCard(recipe) {
   const toggleBtn = fragment.querySelector('[data-toggle-details]');
   if (toggleBtn) {
     setRecipeExpanded(recipe.id, isExpanded, root, details, toggleBtn);
-    if (isExpanded) {
-      ensureRecipeContent(recipe, contentEl);
-    }
     toggleBtn.addEventListener('click', () => {
       const next = !expandedRecipeIds.has(recipe.id);
       setRecipeExpanded(recipe.id, next, root, details, toggleBtn);
-      if (next) ensureRecipeContent(recipe, contentEl);
+      if (next) ensureRecipeContent(contentEl);
     });
   }
 
@@ -575,16 +572,11 @@ function buildArticleViewer(url) {
   return viewer;
 }
 
-function ensureRecipeContent(recipe, contentEl) {
+function ensureRecipeContent(contentEl) {
   if (!contentEl) return;
-  if (recipe.source === 'youtube') {
-    contentEl.hidden = true;
-    return;
-  }
-  contentEl.hidden = false;
-  if (contentEl.dataset.loaded === 'true') return;
-  contentEl.dataset.loaded = 'true';
-  contentEl.appendChild(buildArticleViewer(recipe.url));
+  contentEl.hidden = true;
+  contentEl.replaceChildren();
+  delete contentEl.dataset.loaded;
 }
 
 function addIngredient(recipeId) {
