@@ -609,7 +609,14 @@ p { margin: 0; }
       linear-gradient(90deg, rgba(252, 246, 238, 0.96) 0%, rgba(252, 246, 238, 0.90) 34%, rgba(252, 246, 238, 0.48) 58%, rgba(252, 246, 238, 0.10) 74%, rgba(252, 246, 238, 0.00) 100%),
       url("assets/image.jpg") right center / cover no-repeat;
   }
-  html[data-variant="pc"] .hero__content::before,
+  html[data-variant="pc"] .hero__content::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 12px;
+    background: linear-gradient(180deg, #d67d55, #bb5c3d);
+    z-index: 1;
+  }
   html[data-variant="pc"] .hero__content::after {
     content: none;
   }
