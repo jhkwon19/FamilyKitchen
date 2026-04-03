@@ -827,6 +827,81 @@ function initDesktopRecipeWheelScroll() {
   }, { passive: false });
 }
 
+function initDesktopRecipeAutoScroll() {
+  if (document.documentElement.dataset.variant !== 'pc') return;
+  if (!recipeList) return;
+
+  const shouldIgnoreTarget = target => (
+    target instanceof Element &&
+    Boolean(target.closest('input, textarea, select, button, a, .drawer__panel'))
+  );
+
+  let active = false;
+  let anchorY = 0;
+  let pointerY = 0;
+  let frameId = 0;
+
+  const stop = () => {
+    active = false;
+    if (frameId) {
+      cancelAnimationFrame(frameId);
+      frameId = 0;
+    }
+    document.body.classList.remove('pc-autoscroll-active');
+  };
+
+  const tick = () => {
+    if (!active) return;
+
+    const delta = pointerY - anchorY;
+    if (Math.abs(delta) > 8) {
+      const maxStep = 28;
+      const step = Math.max(-maxStep, Math.min(maxStep, delta * 0.12));
+      const nextScrollTop = recipeList.scrollTop + step;
+      const maxScrollTop = recipeList.scrollHeight - recipeList.clientHeight;
+      recipeList.scrollTop = Math.max(0, Math.min(maxScrollTop, nextScrollTop));
+    }
+
+    frameId = requestAnimationFrame(tick);
+  };
+
+  window.addEventListener('mousedown', event => {
+    if (event.button !== 1) return;
+    if (drawer?.classList.contains('open') || ingDrawer?.classList.contains('open')) return;
+    if (shouldIgnoreTarget(event.target)) return;
+    if (recipeList.scrollHeight <= recipeList.clientHeight) return;
+
+    event.preventDefault();
+
+    if (active) {
+      stop();
+      return;
+    }
+
+    active = true;
+    anchorY = event.clientY;
+    pointerY = event.clientY;
+    document.body.classList.add('pc-autoscroll-active');
+    frameId = requestAnimationFrame(tick);
+  });
+
+  window.addEventListener('mousemove', event => {
+    if (!active) return;
+    pointerY = event.clientY;
+  });
+
+  window.addEventListener('mousedown', event => {
+    if (!active) return;
+    if (event.button !== 1) stop();
+  });
+
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Escape') stop();
+  });
+
+  window.addEventListener('blur', stop);
+}
+
 form.addEventListener('submit', handleSubmit);
 searchInput.addEventListener('input', handleSearch);
 sortSelect.addEventListener('change', handleSort);
@@ -849,5 +924,6 @@ window.addEventListener('keydown', e => {
 
 initPullToRefresh();
 initDesktopRecipeWheelScroll();
+initDesktopRecipeAutoScroll();
 fetchRecipes().catch(err => alert(err.message));
 renderIngredientDrafts();

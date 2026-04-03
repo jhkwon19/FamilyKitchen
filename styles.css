@@ -16,6 +16,10 @@ body {
               var(--bg);
   color: var(--text);
 }
+
+body.pc-autoscroll-active {
+  cursor: ns-resize;
+}
 a { color: inherit; }
 h1, h2, h3 { margin: 0; }
 p { margin: 0; }
