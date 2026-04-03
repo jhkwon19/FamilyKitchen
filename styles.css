@@ -461,15 +461,33 @@ p { margin: 0; }
 }
 
 @media (min-width: 1024px) {
+  html[data-variant="pc"],
+  html[data-variant="pc"] body {
+    height: 100%;
+  }
+  html[data-variant="pc"] body {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+  html[data-variant="pc"] .layout {
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 32px;
+  }
   html[data-variant="pc"] .panel {
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
   }
   html[data-variant="pc"] .panel__header {
     flex: 0 0 auto;
   }
   html[data-variant="pc"] .recipes {
-    max-height: calc(100vh - 320px);
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     padding-right: 8px;
     align-content: start;
