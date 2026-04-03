@@ -616,7 +616,7 @@ p { margin: 0; }
 .toggle-wrap {
   padding: 0 7vw 12px;
   display: grid;
-  gap: 8px;
+  gap: 12px;
 }
 .top-toggle { margin-top: -6px; }
 
