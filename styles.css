@@ -607,7 +607,7 @@ p { margin: 0; }
     padding: 30px 36px 28px;
     background:
       linear-gradient(90deg, rgba(252, 246, 238, 0.96) 0%, rgba(252, 246, 238, 0.90) 34%, rgba(252, 246, 238, 0.48) 58%, rgba(252, 246, 238, 0.10) 74%, rgba(252, 246, 238, 0.00) 100%),
-      url("assets/hero-korean-table.jpg") right center / cover no-repeat;
+      url("assets/image.jpg") right center / cover no-repeat;
   }
   html[data-variant="pc"] .hero__content::before,
   html[data-variant="pc"] .hero__content::after {
