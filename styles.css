@@ -618,7 +618,7 @@ p { margin: 0; }
   display: block;
 }
 .toggle-wrap > .btn { display: block; width: 100%; }
-.toggle-wrap > .btn + .btn { margin-top: 28px; }
+.toggle-wrap > .btn + .btn { margin-top: 18px; }
 .top-toggle { margin-top: -6px; }
 
 html[data-variant="mobile"],
