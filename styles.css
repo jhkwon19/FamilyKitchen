@@ -117,109 +117,31 @@ p { margin: 0; }
   font-size: 15px;
 }
 .hero__actions { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
-.hero__art {
+.hero__photo {
   display: none;
-  position: relative;
-  min-height: 210px;
+  position: absolute;
   border-radius: 28px;
-  border: 1px solid rgba(138, 96, 68, 0.16);
-  background:
-    linear-gradient(180deg, rgba(255, 251, 244, 0.92), rgba(241, 224, 199, 0.92)),
-    var(--panel);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
   overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(59, 34, 24, 0.10), rgba(59, 34, 24, 0.20)),
+    url("assets/hero-korean-table.jpg") center center / cover no-repeat;
+  box-shadow: 0 20px 36px rgba(104, 62, 35, 0.16);
+  border: 1px solid rgba(138, 96, 68, 0.16);
 }
-.hero__art::before {
+.hero__photo::before {
   content: "";
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(135deg, rgba(181, 84, 52, 0.10), transparent 35%),
-    radial-gradient(circle at 82% 22%, rgba(125, 128, 80, 0.18), transparent 24%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(61, 37, 23, 0.24)),
+    linear-gradient(135deg, rgba(181, 84, 52, 0.08), transparent 36%);
 }
-.hero__art::after {
+.hero__photo::after {
   content: "";
   position: absolute;
   inset: 14px;
-  border-radius: 22px;
-  border: 1px dashed rgba(141, 94, 60, 0.14);
-}
-.hero__art-card {
-  position: absolute;
-  width: 126px;
-  height: 90px;
-  border-radius: 18px;
-  border: 1px solid rgba(130, 88, 60, 0.14);
-  background: linear-gradient(180deg, rgba(255, 254, 250, 0.96), rgba(248, 238, 223, 0.96));
-  box-shadow: 0 16px 30px rgba(104, 62, 35, 0.10);
-}
-.hero__art-card::before,
-.hero__art-card::after {
-  content: "";
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  height: 2px;
-  border-radius: 999px;
-  background: rgba(172, 128, 96, 0.28);
-}
-.hero__art-card::before { top: 28px; box-shadow: 0 14px 0 rgba(172, 128, 96, 0.20); }
-.hero__art-card::after { top: 56px; right: 34px; }
-.hero__art-card--back {
-  top: 24px;
-  left: 30px;
-  transform: rotate(-8deg);
-}
-.hero__art-card--front {
-  top: 38px;
-  left: 66px;
-  transform: rotate(7deg);
-}
-.hero__art-plate {
-  position: absolute;
-  right: 26px;
-  bottom: 18px;
-  width: 150px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, #f6d49f 0 28%, #d78053 28% 35%, #fffaf3 35% 63%, #ead7bc 63% 100%);
-  box-shadow:
-    0 20px 36px rgba(104, 62, 35, 0.16),
-    inset 0 0 0 10px rgba(255, 251, 244, 0.86);
-}
-.hero__art-plate::before {
-  content: "";
-  position: absolute;
-  inset: 24px;
-  border-radius: 50%;
-  border: 2px dashed rgba(181, 84, 52, 0.20);
-}
-.hero__art-garnish {
-  position: absolute;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #8fa15a, #6f7f43);
-}
-.hero__art-garnish--one {
-  width: 34px;
-  height: 12px;
-  right: 20px;
-  top: 40px;
-  transform: rotate(28deg);
-}
-.hero__art-garnish--two {
-  width: 26px;
-  height: 10px;
-  left: 28px;
-  bottom: 42px;
-  transform: rotate(-34deg);
-}
-.hero__art-garnish--three {
-  width: 18px;
-  height: 18px;
-  left: 54px;
-  top: 24px;
-  background: radial-gradient(circle at 30% 30%, #f5e6b2, #b55434);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 248, 239, 0.34);
 }
 
 .layout {
@@ -701,16 +623,15 @@ p { margin: 0; }
     padding-bottom: 32px;
   }
   html[data-variant="pc"] .hero {
-    padding: 26px 7vw 14px;
+    padding: 20px 7vw 12px;
     align-items: flex-start;
   }
   html[data-variant="pc"] .hero__content {
     max-width: none;
     width: 100%;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 12px 28px;
-    align-items: start;
+    display: block;
+    min-height: 0;
+    padding: 24px 340px 24px 34px;
   }
   html[data-variant="pc"] .eyebrow {
     margin-bottom: 4px;
@@ -729,14 +650,15 @@ p { margin: 0; }
     line-height: 1.6;
   }
   html[data-variant="pc"] .hero__actions {
-    grid-column: 1 / 2;
     margin-top: 4px;
   }
-  html[data-variant="pc"] .hero__art {
+  html[data-variant="pc"] .hero__photo {
     display: block;
-    grid-column: 2 / 3;
-    grid-row: 1 / 5;
-    align-self: stretch;
+    top: 20px;
+    right: 22px;
+    width: 286px;
+    height: calc(100% - 40px);
+    min-height: 172px;
   }
   html[data-variant="pc"] .hero__actions .btn {
     padding: 10px 16px;
@@ -893,6 +815,7 @@ html[data-variant="mobile"] body {
     padding: 24px 22px 22px;
     border-radius: 26px;
   }
+  .hero__photo { display: none !important; }
   .hero h1 {
     font-size: clamp(30px, 9vw, 40px);
   }
