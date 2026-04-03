@@ -615,10 +615,7 @@ p { margin: 0; }
 }
 .toggle-wrap {
   padding: 0 7vw 12px;
-  display: block;
 }
-.toggle-wrap > .btn { display: block; width: 100%; }
-.toggle-wrap > .btn + .btn { margin-top: 12px; }
 .top-toggle { margin-top: -6px; }
 
 html[data-variant="mobile"],
@@ -686,6 +683,8 @@ html[data-variant="mobile"] body {
   }
   .mobile-only { display: block; }
   .desktop-only { display: none; }
+  .toggle-wrap > .btn { display: block; width: 100%; }
+  .toggle-wrap > .btn + .btn { margin-top: 12px; }
   .drawer__panel {
     width: 100%;
     height: auto;
