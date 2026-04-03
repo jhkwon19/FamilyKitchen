@@ -1,14 +1,16 @@
 import os
 import uuid
 from datetime import datetime
+from html import unescape
 from pathlib import Path
 from typing import List, Optional
-from urllib.parse import quote_plus, urljoin
+from urllib.parse import quote_plus, urljoin, urlparse
 import re
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 import httpx
 from fastapi.responses import FileResponse, RedirectResponse
@@ -335,31 +337,187 @@ def _extract_meta(html: str, base_url: str = "") -> dict:
     }
 
 
+def _clean_text(value: str) -> str:
+    text = re.sub(r"<br\s*/?>", "\n", value, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = unescape(text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _dedupe_keep_order(values: list[str], limit: int | None = None) -> list[str]:
+    seen = set()
+    items: list[str] = []
+    for value in values:
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        items.append(value)
+        if limit is not None and len(items) >= limit:
+            break
+    return items
+
+
+def _looks_like_noise(text: str) -> bool:
+    lowered = text.lower()
+    noise_markers = [
+        "copyright",
+        "advertisement",
+        "광고",
+        "댓글",
+        "공유",
+        "좋아요",
+        "구독",
+        "이전",
+        "다음",
+        "category",
+    ]
+    return any(marker in lowered for marker in noise_markers)
+
+
+def _extract_article(html: str, base_url: str = "") -> dict:
+    meta = _extract_meta(html, base_url=base_url)
+
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup.select("script, style, noscript, svg, header, footer, nav, aside"):
+        tag.decompose()
+
+    candidates = [
+        ".se-main-container",
+        "#postViewArea",
+        ".post-view",
+        ".tt_article_useless_p_margin",
+        ".entry-content",
+        ".article-view",
+        ".article_view",
+        ".contents_style",
+        ".post-content",
+        ".post_content",
+        ".article-body",
+        ".article_body",
+        "article",
+        "main",
+        "#content",
+        ".content",
+    ]
+    article_root = None
+    for selector in candidates:
+        found = soup.select_one(selector)
+        if found and len(found.get_text(" ", strip=True)) > 120:
+            article_root = found
+            break
+
+    if article_root is None:
+        article_root = soup.body or soup
+
+    blocks: list[str] = []
+    for node in article_root.select("p, li, h2, h3"):
+        text = _clean_text(str(node))
+        if len(text) < 20 or _looks_like_noise(text):
+            continue
+        blocks.append(text)
+
+    if not blocks:
+        for node in article_root.select("div"):
+            text = _clean_text(str(node))
+            if len(text) < 60 or _looks_like_noise(text):
+                continue
+            blocks.append(text)
+
+    paragraphs = _dedupe_keep_order(blocks, limit=80)
+
+    return {
+        "title": meta["title"],
+        "description": meta["description"],
+        "image": meta["image"],
+        "snippet": meta["snippet"],
+        "paragraphs": paragraphs,
+    }
+
+
+async def _fetch_html(url: str) -> tuple[str, httpx.URL, str]:
+    async with httpx.AsyncClient(follow_redirects=True, timeout=8) as client:
+        resp = await client.get(
+            url,
+            headers={
+                "User-Agent": DEFAULT_UA,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
+        )
+    return resp.text, resp.url, resp.headers.get("content-type", "")
+
+
+async def _resolve_article_html(url: str) -> tuple[str, str, str]:
+    text, final_url, content_type = await _fetch_html(url)
+    parsed = urlparse(str(final_url))
+
+    # Naver blog often serves the actual post inside mainFrame.
+    if "blog.naver.com" in parsed.netloc and 'id="mainFrame"' in text:
+        iframe_match = re.search(r'id="mainFrame"[^>]+src="([^"]+)"', text, flags=re.IGNORECASE)
+        if iframe_match:
+            inner_url = urljoin(str(final_url), iframe_match.group(1))
+            text, final_url, content_type = await _fetch_html(inner_url)
+
+    return text, content_type, str(final_url)
+
+
 @app.get("/api/preview")
 async def preview(url: HttpUrl):
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=8) as client:
-            resp = await client.get(
-                str(url),
-                headers={
-                    "User-Agent": DEFAULT_UA,
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                },
-            )
-        ctype = resp.headers.get("content-type", "")
+        text, ctype, final_url = await _resolve_article_html(str(url))
         if "text/html" not in ctype:
-            return {"title": "", "description": "", "site": resp.url.host, "image": "", "snippet": ""}
-        text = resp.text[:50000]  # limit
-        meta = _extract_meta(text, base_url=str(resp.url))
+            return {
+                "title": "",
+                "description": "",
+                "site": urlparse(final_url).netloc,
+                "image": "",
+                "snippet": "",
+            }
+        text = text[:50000]
+        meta = _extract_meta(text, base_url=final_url)
         return {
             "title": meta["title"],
             "description": meta["description"],
             "image": meta["image"],
             "snippet": meta["snippet"],
-            "site": resp.url.host,
+            "site": urlparse(final_url).netloc,
         }
     except Exception as exc:  # noqa: BLE001
         return {"title": "", "description": "", "site": "", "image": "", "snippet": ""}
+
+
+@app.get("/api/article")
+async def article(url: HttpUrl):
+    try:
+        text, ctype, final_url = await _resolve_article_html(str(url))
+        if "text/html" not in ctype:
+            return {
+                "title": "",
+                "description": "",
+                "site": urlparse(final_url).netloc,
+                "image": "",
+                "snippet": "",
+                "paragraphs": [],
+            }
+        text = text[:500000]
+        article_data = _extract_article(text, base_url=final_url)
+        return {
+            "title": article_data["title"],
+            "description": article_data["description"],
+            "image": article_data["image"],
+            "snippet": article_data["snippet"],
+            "paragraphs": article_data["paragraphs"],
+            "site": urlparse(final_url).netloc,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "title": "",
+            "description": "",
+            "site": "",
+            "image": "",
+            "snippet": "",
+            "paragraphs": [],
+        }
 
 
 # Serve static front-end files after API routes

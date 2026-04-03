@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body>
   <header class="hero">
@@ -104,11 +104,19 @@
   <template id="recipeCardTemplate">
     <article class="recipe">
       <div class="recipe__header">
-        <div>
-          <p class="badge" data-source></p>
+        <div class="recipe__headline">
           <h3 data-title></h3>
+        </div>
+        <button type="button" class="recipe__toggle" data-toggle-details aria-expanded="false">상세 보기</button>
+      </div>
+      <div class="recipe__preview" data-preview></div>
+      <div class="recipe__details" data-details hidden>
+        <div class="recipe__content" data-content hidden></div>
+        <div class="recipe__meta-block">
+          <p class="badge" data-source></p>
           <p class="recipe__meta" data-tags></p>
         </div>
+        <p class="recipe__notes" data-notes></p>
         <div class="recipe__actions">
           <button class="icon-btn" data-open title="링크 열기">🔗</button>
           <button class="icon-btn" data-copy title="클립보드 복사">📋</button>
@@ -116,8 +124,6 @@
           <button class="icon-btn" data-delete title="삭제">🗑️</button>
         </div>
       </div>
-      <p class="recipe__notes" data-notes></p>
-      <div class="recipe__preview" data-preview></div>
     </article>
   </template>
 

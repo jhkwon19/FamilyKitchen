@@ -27,10 +27,12 @@ const recipeDrawerTitle = document.getElementById('recipeDrawerTitle');
 
 let recipes = [];
 const previewCache = new Map();
+const articleCache = new Map();
 let ingredientDrafts = [];
 let activeIngredientRecipeId = null;
 let editingRecipeId = null;
 let editingIngredientId = null;
+const expandedRecipeIds = new Set();
 
 async function fetchRecipes() {
   const res = await fetch(API_BASE);
@@ -165,7 +167,11 @@ function closeDrawer() {
   updateRecipeDrawerCopy(false);
 }
 
-function buildPreview(url, source) {
+function buildPreview(url, source, options = {}) {
+  const { compact = false } = options;
+  if (compact) {
+    return buildCompactPreview(url, source);
+  }
   if (source === 'youtube') {
     const embed = toYouTubeEmbed(url);
     if (embed) {
@@ -242,18 +248,77 @@ function buildPreview(url, source) {
   return container;
 }
 
+function buildCompactPreview(url, source) {
+  const tile = document.createElement('div');
+  tile.className = 'preview-tile';
+
+  const label = document.createElement('span');
+  label.className = 'preview-tile__label';
+  label.textContent = sourceLabel(source);
+
+  const site = document.createElement('span');
+  site.className = 'preview-tile__site';
+  site.textContent = safeDomain(url);
+
+  const placeholder = document.createElement('div');
+  placeholder.className = 'preview-tile__placeholder';
+  placeholder.textContent = source === 'youtube' ? 'VIDEO' : 'LINK';
+
+  tile.appendChild(placeholder);
+  tile.appendChild(label);
+  tile.appendChild(site);
+
+  const youtubeThumb = toYouTubeThumbnail(url);
+  if (youtubeThumb) {
+    const img = document.createElement('img');
+    img.src = youtubeThumb;
+    img.alt = 'video thumbnail';
+    img.loading = 'lazy';
+    img.referrerPolicy = 'no-referrer';
+    img.onerror = () => img.remove();
+    tile.prepend(img);
+    return tile;
+  }
+
+  loadPreview(url).then(meta => {
+    if (!meta) return;
+    if (meta.site) site.textContent = meta.site;
+    if (meta.image) {
+      const img = document.createElement('img');
+      img.src = meta.image;
+      img.alt = meta.title || 'link preview';
+      img.loading = 'lazy';
+      img.referrerPolicy = 'no-referrer';
+      img.onerror = () => img.remove();
+      tile.prepend(img);
+    }
+  });
+
+  return tile;
+}
+
 function toYouTubeEmbed(url) {
+  const videoId = extractYouTubeId(url);
+  return videoId ? `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0` : null;
+}
+
+function toYouTubeThumbnail(url) {
+  const videoId = extractYouTubeId(url);
+  return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
+}
+
+function extractYouTubeId(url) {
   try {
     const u = new URL(url);
     if (!u.hostname.includes('youtube.com') && !u.hostname.includes('youtu.be')) return null;
     if (u.hostname === 'youtu.be') {
-      return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+      return u.pathname.slice(1);
     }
     if (u.searchParams.get('v')) {
-      return `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
+      return u.searchParams.get('v');
     }
     if (u.pathname.startsWith('/shorts/')) {
-      return `https://www.youtube.com/embed/${u.pathname.split('/')[2]}`;
+      return u.pathname.split('/')[2];
     }
     return null;
   } catch (err) {
@@ -285,9 +350,24 @@ function deleteRecipe(id) {
     .then(res => {
       if (!res.ok) throw new Error('삭제 실패');
       recipes = recipes.filter(r => r.id !== id);
+      expandedRecipeIds.delete(id);
       render();
     })
     .catch(err => alert(err.message));
+}
+
+function setRecipeExpanded(recipeId, expanded, root, details, toggleBtn) {
+  if (expanded) {
+    expandedRecipeIds.add(recipeId);
+  } else {
+    expandedRecipeIds.delete(recipeId);
+  }
+  if (root) root.classList.toggle('is-open', expanded);
+  if (details) details.hidden = !expanded;
+  if (toggleBtn) {
+    toggleBtn.textContent = expanded ? '상세 접기' : '상세 보기';
+    toggleBtn.setAttribute('aria-expanded', String(expanded));
+  }
 }
 
 function render() {
@@ -318,6 +398,7 @@ function buildRecipeCard(recipe) {
   const tpl = document.getElementById('recipeCardTemplate');
   const fragment = tpl.content.cloneNode(true);
   const root = fragment.querySelector('.recipe');
+  const isExpanded = expandedRecipeIds.has(recipe.id);
 
   const sourceBadge = fragment.querySelector('[data-source]');
   sourceBadge.textContent = sourceLabel(recipe.source);
@@ -327,7 +408,38 @@ function buildRecipeCard(recipe) {
   fragment.querySelector('[data-notes]').textContent = recipe.notes || '메모 없음';
 
   const preview = fragment.querySelector('[data-preview]');
-  preview.appendChild(buildPreview(recipe.url, recipe.source));
+  const previewEl = recipe.source === 'youtube'
+    ? buildPreview(recipe.url, recipe.source)
+    : buildPreview(recipe.url, recipe.source, { compact: true });
+  preview.appendChild(previewEl);
+  if (recipe.source === 'blog') {
+    preview.classList.add('recipe__preview--clickable');
+    preview.setAttribute('role', 'link');
+    preview.setAttribute('tabindex', '0');
+    preview.setAttribute('aria-label', `${recipe.title} 원문 보기`);
+    preview.addEventListener('click', () => openLink(recipe.url));
+    preview.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openLink(recipe.url);
+      }
+    });
+  }
+
+  const details = fragment.querySelector('[data-details]');
+  const contentEl = fragment.querySelector('[data-content]');
+  const toggleBtn = fragment.querySelector('[data-toggle-details]');
+  if (toggleBtn) {
+    setRecipeExpanded(recipe.id, isExpanded, root, details, toggleBtn);
+    if (isExpanded) {
+      ensureRecipeContent(recipe, contentEl);
+    }
+    toggleBtn.addEventListener('click', () => {
+      const next = !expandedRecipeIds.has(recipe.id);
+      setRecipeExpanded(recipe.id, next, root, details, toggleBtn);
+      if (next) ensureRecipeContent(recipe, contentEl);
+    });
+  }
 
   fragment.querySelector('[data-open]').addEventListener('click', () => openLink(recipe.url));
   fragment.querySelector('[data-delete]').addEventListener('click', () => deleteRecipe(recipe.id));
@@ -374,6 +486,105 @@ async function loadPreview(url) {
     .catch(() => null);
   previewCache.set(url, promise);
   return promise;
+}
+
+async function loadArticle(url) {
+  if (articleCache.has(url)) return articleCache.get(url);
+  const promise = fetch(`/api/article?url=${encodeURIComponent(url)}`)
+    .then(res => res.ok ? res.json() : null)
+    .catch(() => null);
+  articleCache.set(url, promise);
+  return promise;
+}
+
+function buildArticleViewer(url) {
+  const viewer = document.createElement('section');
+  viewer.className = 'article-viewer';
+
+  const status = document.createElement('p');
+  status.className = 'article-viewer__status';
+  status.textContent = '본문을 불러오는 중...';
+  viewer.appendChild(status);
+
+  loadArticle(url).then(article => {
+    viewer.innerHTML = '';
+    const paragraphs = article?.paragraphs || [];
+    if (!article || (!article.title && !paragraphs.length && !article.description && !article.snippet)) {
+      const empty = document.createElement('p');
+      empty.className = 'article-viewer__status';
+      empty.textContent = '이 링크는 앱 안에서 본문을 읽기 어렵습니다.';
+      viewer.appendChild(empty);
+      return;
+    }
+
+    if (article.image) {
+      const hero = document.createElement('img');
+      hero.className = 'article-viewer__image';
+      hero.src = article.image;
+      hero.alt = article.title || 'article image';
+      hero.loading = 'lazy';
+      hero.referrerPolicy = 'no-referrer';
+      hero.onerror = () => hero.remove();
+      viewer.appendChild(hero);
+    }
+
+    if (article.title) {
+      const title = document.createElement('h4');
+      title.className = 'article-viewer__title';
+      title.textContent = article.title;
+      viewer.appendChild(title);
+    }
+
+    const subtitleText = article.description || article.snippet || '';
+    if (subtitleText) {
+      const subtitle = document.createElement('p');
+      subtitle.className = 'article-viewer__subtitle';
+      subtitle.textContent = subtitleText;
+      viewer.appendChild(subtitle);
+    }
+
+    if (paragraphs.length) {
+      const body = document.createElement('div');
+      body.className = 'article-viewer__body';
+      paragraphs.forEach(text => {
+        const p = document.createElement('p');
+        p.textContent = text;
+        body.appendChild(p);
+      });
+      viewer.appendChild(body);
+    }
+
+    const footer = document.createElement('div');
+    footer.className = 'article-viewer__footer';
+
+    const site = document.createElement('span');
+    site.className = 'article-viewer__site';
+    site.textContent = article.site || safeDomain(url);
+
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'btn btn-ghost';
+    openBtn.textContent = '원문 열기';
+    openBtn.addEventListener('click', () => openLink(url));
+
+    footer.appendChild(site);
+    footer.appendChild(openBtn);
+    viewer.appendChild(footer);
+  });
+
+  return viewer;
+}
+
+function ensureRecipeContent(recipe, contentEl) {
+  if (!contentEl) return;
+  if (recipe.source === 'youtube') {
+    contentEl.hidden = true;
+    return;
+  }
+  contentEl.hidden = false;
+  if (contentEl.dataset.loaded === 'true') return;
+  contentEl.dataset.loaded = 'true';
+  contentEl.appendChild(buildArticleViewer(recipe.url));
 }
 
 function addIngredient(recipeId) {
