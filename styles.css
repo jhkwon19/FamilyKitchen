@@ -615,9 +615,10 @@ p { margin: 0; }
 }
 .toggle-wrap {
   padding: 0 7vw 12px;
-  display: grid;
-  gap: 28px;
+  display: block;
 }
+.toggle-wrap > .btn { display: block; width: 100%; }
+.toggle-wrap > .btn + .btn { margin-top: 28px; }
 .top-toggle { margin-top: -6px; }
 
 html[data-variant="mobile"],
