@@ -799,6 +799,34 @@ function initPullToRefresh() {
   }, { passive: true });
 }
 
+function initDesktopRecipeWheelScroll() {
+  if (document.documentElement.dataset.variant !== 'pc') return;
+  if (!recipeList) return;
+
+  const shouldIgnoreTarget = target => (
+    target instanceof Element &&
+    Boolean(target.closest('input, textarea, select, button, a, .drawer__panel'))
+  );
+
+  window.addEventListener('wheel', event => {
+    if (drawer?.classList.contains('open') || ingDrawer?.classList.contains('open')) return;
+    if (shouldIgnoreTarget(event.target)) return;
+
+    const canScroll = recipeList.scrollHeight > recipeList.clientHeight;
+    if (!canScroll) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = recipeList;
+    const nextScrollTop = scrollTop + event.deltaY;
+    const atTop = scrollTop <= 0 && event.deltaY < 0;
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 1 && event.deltaY > 0;
+
+    if (atTop || atBottom) return;
+
+    recipeList.scrollTop = nextScrollTop;
+    event.preventDefault();
+  }, { passive: false });
+}
+
 form.addEventListener('submit', handleSubmit);
 searchInput.addEventListener('input', handleSearch);
 sortSelect.addEventListener('change', handleSort);
@@ -820,5 +848,6 @@ window.addEventListener('keydown', e => {
 });
 
 initPullToRefresh();
+initDesktopRecipeWheelScroll();
 fetchRecipes().catch(err => alert(err.message));
 renderIngredientDrafts();
