@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=45">
+  <link rel="stylesheet" href="styles.css?v=46">
 </head>
 <body>
   <header class="hero">
@@ -32,6 +32,7 @@
         <div class="panel__tools">
           <div class="filter-tabs" aria-label="레시피 필터">
             <button id="allFilterBtn" type="button" class="filter-tab is-active">전체</button>
+            <button id="cuisineFilterBtn" type="button" class="filter-tab">분류</button>
             <button id="favoriteFilterBtn" type="button" class="filter-tab">즐겨찾기</button>
           </div>
           <div class="filter">
@@ -43,6 +44,18 @@
             </select>
           </div>
         </div>
+      </div>
+      <div id="cuisineFilterBar" class="cuisine-filters" hidden>
+        <button type="button" class="cuisine-filter is-active" data-cuisine-filter="all">전체</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="korean">한식</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="chinese">중식</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="japanese">일식</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="western">양식</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="asian">아시안</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="dessert">디저트</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="snack">간식</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="fusion">퓨전</button>
+        <button type="button" class="cuisine-filter" data-cuisine-filter="other">기타</button>
       </div>
       <div id="recipeList" class="recipes"></div>
       <p id="emptyState" class="muted">아직 저장된 레시피가 없습니다. 위에 링크를 추가해보세요.</p>
@@ -150,6 +163,6 @@
     </article>
   </template>
 
-  <script src="app.js?v=25" type="module"></script>
+  <script src="app.js?v=26" type="module"></script>
 </body>
 </html>

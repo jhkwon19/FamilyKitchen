@@ -7,7 +7,9 @@ const searchInput = document.getElementById('searchInput');
 const sortSelect = document.getElementById('sortSelect');
 const cuisineSelect = document.getElementById('cuisine');
 const allFilterBtn = document.getElementById('allFilterBtn');
+const cuisineFilterBtn = document.getElementById('cuisineFilterBtn');
 const favoriteFilterBtn = document.getElementById('favoriteFilterBtn');
+const cuisineFilterBar = document.getElementById('cuisineFilterBar');
 const newRecipeBtn = document.getElementById('newRecipeBtn');
 const resetBtn = document.getElementById('resetBtn');
 const toggleFormBtn = document.getElementById('toggleFormBtn');
@@ -37,6 +39,7 @@ let activeIngredientRecipeId = null;
 let editingRecipeId = null;
 let editingIngredientId = null;
 let activeRecipeFilter = 'all';
+let activeCuisineFilter = 'all';
 const favoritePendingIds = new Set();
 const expandedRecipeIds = new Set();
 const CUISINE_LABELS = {
@@ -129,10 +132,34 @@ function setRecipeFilter(nextFilter) {
     allFilterBtn.classList.toggle('is-active', isActive);
     allFilterBtn.setAttribute('aria-pressed', String(isActive));
   }
+  if (cuisineFilterBtn) {
+    const isActive = nextFilter === 'cuisine';
+    cuisineFilterBtn.classList.toggle('is-active', isActive);
+    cuisineFilterBtn.setAttribute('aria-pressed', String(isActive));
+  }
   if (favoriteFilterBtn) {
     const isActive = nextFilter === 'favorites';
     favoriteFilterBtn.classList.toggle('is-active', isActive);
     favoriteFilterBtn.setAttribute('aria-pressed', String(isActive));
+  }
+  if (cuisineFilterBar) {
+    cuisineFilterBar.hidden = nextFilter !== 'cuisine';
+  }
+  render();
+}
+
+function setCuisineFilter(nextCuisine) {
+  activeCuisineFilter = nextCuisine;
+  if (cuisineFilterBar) {
+    cuisineFilterBar.querySelectorAll('[data-cuisine-filter]').forEach(button => {
+      const isActive = button.dataset.cuisineFilter === nextCuisine;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
+  }
+  if (activeRecipeFilter !== 'cuisine') {
+    setRecipeFilter('cuisine');
+    return;
   }
   render();
 }
@@ -487,6 +514,7 @@ function render() {
 
   let filtered = recipes.filter(r => {
     if (activeRecipeFilter === 'favorites' && !r.is_favorite) return false;
+    if (activeRecipeFilter === 'cuisine' && activeCuisineFilter !== 'all' && r.cuisine !== activeCuisineFilter) return false;
     const haystack = [r.title, r.notes, r.cuisine, cuisineLabel(r.cuisine), r.tags.join(' '), (r.ingredients || []).map(i => i.name).join(' ')].join(' ').toLowerCase();
     return haystack.includes(keyword);
   });
@@ -504,9 +532,15 @@ function render() {
   });
 
   if (emptyState) {
-    emptyState.textContent = activeRecipeFilter === 'favorites'
-      ? '아직 즐겨찾기한 레시피가 없습니다.'
-      : '아직 저장된 레시피가 없습니다. 위에 링크를 추가해보세요.';
+    if (activeRecipeFilter === 'favorites') {
+      emptyState.textContent = '아직 즐겨찾기한 레시피가 없습니다.';
+    } else if (activeRecipeFilter === 'cuisine') {
+      emptyState.textContent = activeCuisineFilter === 'all'
+        ? '아직 분류된 레시피가 없습니다.'
+        : `${cuisineLabel(activeCuisineFilter)} 레시피가 없습니다.`;
+    } else {
+      emptyState.textContent = '아직 저장된 레시피가 없습니다. 위에 링크를 추가해보세요.';
+    }
   }
   emptyState.style.display = filtered.length ? 'none' : 'block';
 }
@@ -1070,7 +1104,15 @@ form.addEventListener('submit', handleSubmit);
 searchInput.addEventListener('input', handleSearch);
 sortSelect.addEventListener('change', handleSort);
 if (allFilterBtn) allFilterBtn.addEventListener('click', () => setRecipeFilter('all'));
+if (cuisineFilterBtn) cuisineFilterBtn.addEventListener('click', () => setRecipeFilter('cuisine'));
 if (favoriteFilterBtn) favoriteFilterBtn.addEventListener('click', () => setRecipeFilter('favorites'));
+if (cuisineFilterBar) {
+  cuisineFilterBar.addEventListener('click', event => {
+    const button = event.target.closest('[data-cuisine-filter]');
+    if (!button) return;
+    setCuisineFilter(button.dataset.cuisineFilter || 'all');
+  });
+}
 if (newRecipeBtn) newRecipeBtn.addEventListener('click', () => openDrawer(true));
 resetBtn.addEventListener('click', resetForm);
 if (refreshRecipesBtn) refreshRecipesBtn.addEventListener('click', () => window.location.reload());

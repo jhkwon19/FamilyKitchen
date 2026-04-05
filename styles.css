@@ -185,6 +185,27 @@ p { margin: 0; }
   color: var(--accent-deep);
   box-shadow: 0 6px 18px rgba(104, 62, 35, 0.10);
 }
+.cuisine-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -2px 0 18px;
+}
+.cuisine-filter {
+  border: 1px solid rgba(138, 96, 68, 0.12);
+  background: rgba(255, 250, 243, 0.9);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cuisine-filter.is-active {
+  border-color: rgba(181, 84, 52, 0.18);
+  background: rgba(181, 84, 52, 0.12);
+  color: var(--accent-deep);
+}
 .filter {
   display: flex;
   gap: 8px;
@@ -984,6 +1005,10 @@ html[data-variant="mobile"] body {
   .filter-tabs {
     width: 100%;
     justify-content: flex-start;
+  }
+  .cuisine-filters {
+    margin-top: 6px;
+    gap: 6px;
   }
   .recipe__header { align-items: center; flex-direction: row; }
   .recipe__headline {
