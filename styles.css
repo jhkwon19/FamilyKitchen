@@ -63,14 +63,14 @@ p { margin: 0; }
   display: flex;
   justify-content: space-between;
   gap: 32px;
-  padding: 44px 7vw 24px;
+  padding: 28px 7vw 14px;
   position: relative;
   flex-wrap: wrap;
 }
 .hero__content {
   max-width: 980px;
   width: 100%;
-  padding: 30px 34px;
+  padding: 22px 30px;
   border-radius: 34px;
   border: 1px solid rgba(119, 74, 45, 0.14);
   background:
@@ -101,22 +101,24 @@ p { margin: 0; }
   letter-spacing: 0.12em;
   color: var(--accent-deep);
   font-weight: 700;
-  margin-bottom: 10px;
+  margin: 0 0 6px;
   font-size: 12px;
 }
 .hero h1 {
   font-size: clamp(34px, 4.2vw, 54px);
-  margin-bottom: 14px;
+  margin: 0 0 8px;
   color: #40261c;
   line-height: 1.15;
 }
 .lede {
   color: var(--muted);
-  line-height: 1.8;
-  max-width: 700px;
-  font-size: 15px;
+  line-height: 1.5;
+  max-width: none;
+  font-size: 14px;
+  margin: 0;
+  white-space: nowrap;
 }
-.hero__actions { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+.hero__actions { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
 .layout {
   padding: 0 7vw 64px;
   display: grid;
@@ -596,15 +598,15 @@ p { margin: 0; }
     padding-bottom: 32px;
   }
   html[data-variant="pc"] .hero {
-    padding: 20px 7vw 12px;
+    padding: 14px 7vw 8px;
     align-items: flex-start;
   }
   html[data-variant="pc"] .hero__content {
     max-width: none;
     width: 100%;
     display: block;
-    min-height: 232px;
-    padding: 30px 36px 28px;
+    min-height: 192px;
+    padding: 24px 32px 22px;
     background:
       linear-gradient(90deg, rgba(252, 246, 238, 0.96) 0%, rgba(252, 246, 238, 0.90) 34%, rgba(252, 246, 238, 0.48) 58%, rgba(252, 246, 238, 0.10) 74%, rgba(252, 246, 238, 0.00) 100%),
       url("assets/image.jpg") right center / cover no-repeat;
@@ -636,15 +638,17 @@ p { margin: 0; }
     max-width: 520px;
   }
   html[data-variant="pc"] .lede {
-    max-width: 470px;
-    font-size: 14px;
-    line-height: 1.6;
-    margin-top: 10px;
+    max-width: 640px;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-top: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   html[data-variant="pc"] .hero__actions {
     position: absolute;
-    top: 24px;
-    right: 24px;
+    top: 20px;
+    right: 20px;
     margin-top: 0;
     z-index: 2;
   }
@@ -811,6 +815,7 @@ html[data-variant="mobile"] body {
   .lede {
     font-size: 14px;
     line-height: 1.7;
+    white-space: normal;
   }
   .layout { padding: 0 16px 32px; }
   .panel {
