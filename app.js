@@ -176,12 +176,20 @@ function buildPreview(url, source, options = {}) {
   if (source === 'youtube') {
     const embed = toYouTubeEmbed(url);
     if (embed) {
+      const frame = document.createElement('div');
+      frame.className = 'preview-frame';
       const iframe = document.createElement('iframe');
       iframe.src = embed;
       iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
       iframe.allowFullscreen = true;
-      return iframe;
+      const label = document.createElement('span');
+      label.className = 'preview-frame__label';
+      label.textContent = sourceLabel(source);
+      frame.appendChild(iframe);
+      frame.appendChild(label);
+      return frame;
     }
+    return buildCompactPreview(url, source);
   }
   const container = document.createElement('div');
   container.className = 'link-preview';
@@ -400,13 +408,33 @@ function buildRecipeCard(recipe) {
   const fragment = tpl.content.cloneNode(true);
   const root = fragment.querySelector('.recipe');
   const isExpanded = expandedRecipeIds.has(recipe.id);
-
-  const sourceBadge = fragment.querySelector('[data-source]');
-  sourceBadge.textContent = sourceLabel(recipe.source);
+  const tags = Array.isArray(recipe.tags) ? recipe.tags.filter(Boolean) : [];
+  const notes = (recipe.notes || '').trim();
+  const ingredients = Array.isArray(recipe.ingredients)
+    ? recipe.ingredients.filter(ing => ing && String(ing.name || '').trim())
+    : [];
 
   fragment.querySelector('[data-title]').textContent = recipe.title;
-  fragment.querySelector('[data-tags]').textContent = recipe.tags.length ? `#${recipe.tags.join(' #')}` : '태그 없음';
-  fragment.querySelector('[data-notes]').textContent = recipe.notes || '메모 없음';
+  const tagsBlock = fragment.querySelector('[data-tags-block]');
+  const tagsEl = fragment.querySelector('[data-tags]');
+  if (tagsBlock && tagsEl) {
+    if (tags.length) {
+      tagsEl.textContent = `#${tags.join(' #')}`;
+      tagsBlock.hidden = false;
+    } else {
+      tagsBlock.hidden = true;
+    }
+  }
+
+  const notesEl = fragment.querySelector('[data-notes]');
+  if (notesEl) {
+    if (notes) {
+      notesEl.textContent = notes;
+      notesEl.hidden = false;
+    } else {
+      notesEl.hidden = true;
+    }
+  }
 
   const preview = fragment.querySelector('[data-preview]');
   const previewEl = recipe.source === 'youtube'
@@ -444,14 +472,18 @@ function buildRecipeCard(recipe) {
   const editBtn = fragment.querySelector('[data-edit]');
   if (editBtn) editBtn.addEventListener('click', () => openRecipeEditor(recipe));
   const ingListEl = fragment.querySelector('[data-ingredients]');
+  const ingredientsSection = fragment.querySelector('[data-ingredients-section]');
   const addIngBtn = fragment.querySelector('[data-add-ingredient]');
   if (ingListEl) {
     ingListEl.innerHTML = '';
-    (recipe.ingredients || []).forEach(ing => {
+    ingredients.forEach(ing => {
       const li = document.createElement('li');
       li.textContent = ing.amount ? `${ing.name} - ${ing.amount}` : ing.name;
       ingListEl.appendChild(li);
     });
+  }
+  if (ingredientsSection) {
+    ingredientsSection.hidden = ingredients.length === 0;
   }
   if (addIngBtn) {
     addIngBtn.addEventListener('click', () => openIngredientDrawer(recipe));

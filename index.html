@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=41">
+  <link rel="stylesheet" href="styles.css?v=42">
 </head>
 <body>
   <header class="hero">
@@ -109,11 +109,10 @@
       <div class="recipe__preview" data-preview></div>
       <div class="recipe__details" data-details hidden>
         <div class="recipe__content" data-content hidden></div>
-        <div class="recipe__meta-block">
-          <p class="badge" data-source></p>
+        <div class="recipe__meta-block" data-tags-block hidden>
           <p class="recipe__meta" data-tags></p>
         </div>
-        <p class="recipe__notes" data-notes></p>
+        <p class="recipe__notes" data-notes hidden></p>
         <div class="recipe__actions">
           <button class="icon-btn" data-open title="링크 열기">🔗</button>
           <button class="icon-btn" data-copy title="클립보드 복사">📋</button>
@@ -124,6 +123,6 @@
     </article>
   </template>
 
-  <script src="app.js?v=21" type="module"></script>
+  <script src="app.js?v=22" type="module"></script>
 </body>
 </html>
