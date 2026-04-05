@@ -30,6 +30,7 @@ const ingModalAddBtn = document.getElementById('ingModalAddBtn');
 const ingModalList = document.getElementById('ingModalList');
 const recipeDrawerEyebrow = document.getElementById('recipeDrawerEyebrow');
 const recipeDrawerTitle = document.getElementById('recipeDrawerTitle');
+const hero = document.querySelector('.hero');
 
 let recipes = [];
 const previewCache = new Map();
@@ -55,6 +56,16 @@ const CUISINE_LABELS = {
   other: '기타',
   auto: '자동 분류',
 };
+
+function syncMobileStickyOffset() {
+  if (!hero) return;
+  const isMobileVariant = document.documentElement.dataset.variant === 'mobile';
+  if (!isMobileVariant) {
+    document.documentElement.style.removeProperty('--mobile-sticky-offset');
+    return;
+  }
+  document.documentElement.style.setProperty('--mobile-sticky-offset', `${Math.ceil(hero.offsetHeight)}px`);
+}
 
 async function fetchRecipes() {
   const res = await fetch(API_BASE);
@@ -1157,6 +1168,13 @@ window.addEventListener('keydown', e => {
     closeIngredientDrawer();
   }
 });
+
+syncMobileStickyOffset();
+window.addEventListener('load', syncMobileStickyOffset);
+window.addEventListener('resize', syncMobileStickyOffset);
+if (hero && 'ResizeObserver' in window) {
+  new ResizeObserver(syncMobileStickyOffset).observe(hero);
+}
 
 setRecipeFilter('all');
 initPullToRefresh();
