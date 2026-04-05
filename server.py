@@ -50,6 +50,7 @@ class Recipe(Base):
     notes = Column(Text, nullable=True)
     tags = Column(Text, nullable=True)  # comma-separated
     source = Column(String(32), nullable=False, default="other")
+    cuisine = Column(String(32), nullable=False, default="other")
     is_favorite = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     ingredients = relationship("Ingredient", cascade="all, delete-orphan", back_populates="recipe")
@@ -71,11 +72,13 @@ class RecipeIn(BaseModel):
     notes: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     source: str = "other"
+    cuisine: str = "auto"
     ingredients: List["IngredientIn"] = Field(default_factory=list)
 
 
 class RecipeOut(RecipeIn):
     id: str
+    cuisine: str = "other"
     is_favorite: bool = False
     created_at: datetime
     ingredients: List["IngredientOut"] = Field(default_factory=list)
@@ -102,6 +105,49 @@ RecipeIn.update_forward_refs()
 RecipeOut.update_forward_refs()
 
 
+VALID_CUISINES = {
+    "korean",
+    "chinese",
+    "japanese",
+    "western",
+    "asian",
+    "dessert",
+    "snack",
+    "fusion",
+    "other",
+}
+
+
+CUISINE_KEYWORDS = {
+    "korean": [
+        "김치", "된장", "고추장", "비빔", "국밥", "찌개", "불고기", "갈비", "전", "볶음밥", "냉면", "잡채",
+        "제육", "순두부", "떡국", "사골", "수육", "삼계탕", "비빔국수", "닭갈비", "감자탕", "부대찌개",
+    ],
+    "chinese": [
+        "마라", "짜장", "짬뽕", "탕수육", "깐풍", "고추잡채", "유산슬", "볶음면", "딤섬", "양장피", "훠궈",
+        "마파", "멘보샤", "굴소스", "춘장", "라조장", "지삼선",
+    ],
+    "japanese": [
+        "초밥", "스시", "우동", "소바", "가츠", "돈카츠", "돈부리", "오니기리", "미소", "사케동", "오코노미야키",
+        "타코야키", "규동", "라멘", "텐동", "가라아게", "일본식",
+    ],
+    "western": [
+        "파스타", "리조또", "스테이크", "그라탕", "샐러드", "오믈렛", "스프", "토마토소스", "바질", "크림",
+        "까르보나라", "라자냐", "피자", "감바스", "브런치", "샌드위치", "햄버거",
+    ],
+    "asian": [
+        "쌀국수", "팟타이", "나시고렝", "분짜", "카오", "커리", "톰얌", "똠얌", "반미", "월남쌈", "동남아",
+    ],
+    "dessert": [
+        "케이크", "쿠키", "브라우니", "타르트", "푸딩", "디저트", "아이스크림", "머핀", "스콘", "파르페",
+        "와플", "팬케이크", "도넛", "크레이프",
+    ],
+    "snack": [
+        "떡볶이", "토스트", "주먹밥", "간식", "핫도그", "호떡", "붕어빵", "샌드", "에그마요", "길거리",
+    ],
+}
+
+
 def tags_to_string(tags: List[str]) -> str:
     return ",".join([t.strip() for t in tags if t.strip()])
 
@@ -110,6 +156,41 @@ def tags_to_list(tag_string: Optional[str]) -> List[str]:
     if not tag_string:
         return []
     return [t for t in (tag_string or "").split(",") if t]
+
+
+def normalize_cuisine(value: Optional[str]) -> str:
+    if not value:
+        return "auto"
+    lowered = value.strip().lower()
+    return lowered if lowered in VALID_CUISINES else "auto"
+
+
+def infer_cuisine(title: str, notes: Optional[str], tags: List[str], ingredients: List[str]) -> str:
+    corpus = " ".join(
+        [
+            title or "",
+            notes or "",
+            " ".join(tags or []),
+            " ".join(ingredients or []),
+        ]
+    ).lower()
+
+    if not corpus.strip():
+        return "other"
+
+    scores = {name: 0 for name in CUISINE_KEYWORDS}
+    for cuisine, keywords in CUISINE_KEYWORDS.items():
+        for keyword in keywords:
+            if keyword.lower() in corpus:
+                scores[cuisine] += 1
+
+    best = max(scores, key=scores.get)
+    if scores[best] == 0:
+        return "other"
+
+    if scores[best] > 0 and any(score == scores[best] for name, score in scores.items() if name != best):
+        return "fusion"
+    return best
 
 
 def get_db():
@@ -128,6 +209,7 @@ def serialize_recipe(recipe: Recipe) -> RecipeOut:
         notes=recipe.notes,
         tags=tags_to_list(recipe.tags),
         source=recipe.source,
+        cuisine=recipe.cuisine or "other",
         is_favorite=bool(recipe.is_favorite),
         created_at=recipe.created_at,
         ingredients=[
@@ -159,6 +241,13 @@ def list_recipes(db: Session = Depends(get_db)):
 
 @app.post("/api/recipes", response_model=RecipeOut)
 def create_recipe(payload: RecipeIn, db: Session = Depends(get_db)):
+    normalized_cuisine = normalize_cuisine(payload.cuisine)
+    ingredient_names = [ing.name.strip() for ing in payload.ingredients if ing.name and ing.name.strip()]
+    resolved_cuisine = (
+        infer_cuisine(payload.title, payload.notes, payload.tags, ingredient_names)
+        if normalized_cuisine == "auto"
+        else normalized_cuisine
+    )
     recipe = Recipe(
         id=str(uuid.uuid4()),
         title=payload.title.strip(),
@@ -166,6 +255,7 @@ def create_recipe(payload: RecipeIn, db: Session = Depends(get_db)):
         notes=payload.notes.strip() if payload.notes else None,
         tags=tags_to_string(payload.tags),
         source=payload.source,
+        cuisine=resolved_cuisine,
         is_favorite=False,
     )
     db.add(recipe)
@@ -187,11 +277,23 @@ def update_recipe(recipe_id: str, payload: RecipeIn, db: Session = Depends(get_d
     recipe = db.get(Recipe, recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
+    normalized_cuisine = normalize_cuisine(payload.cuisine)
+    ingredient_names = [
+        ing.name.strip() for ing in payload.ingredients if ing.name and ing.name.strip()
+    ] or [
+        ing.name.strip() for ing in recipe.ingredients if ing.name and ing.name.strip()
+    ]
+    resolved_cuisine = (
+        infer_cuisine(payload.title, payload.notes, payload.tags, ingredient_names)
+        if normalized_cuisine == "auto"
+        else normalized_cuisine
+    )
     recipe.title = payload.title.strip()
     recipe.url = str(payload.url).strip()
     recipe.notes = payload.notes.strip() if payload.notes else None
     recipe.tags = tags_to_string(payload.tags)
     recipe.source = payload.source
+    recipe.cuisine = resolved_cuisine
     db.add(recipe)
     db.commit()
     db.refresh(recipe)

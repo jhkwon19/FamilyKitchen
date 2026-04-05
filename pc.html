@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=44">
+  <link rel="stylesheet" href="styles.css?v=45">
 </head>
 <body>
   <header class="hero">
@@ -75,7 +75,22 @@
         <div class="form__grid">
           <div class="form__row">
             <label for="tags">태그</label>
-            <input id="tags" name="tags" type="text" placeholder="한식, 초간단, 캠핑">
+            <input id="tags" name="tags" type="text" placeholder="초간단, 캠핑, 국물">
+          </div>
+          <div class="form__row">
+            <label for="cuisine">분류</label>
+            <select id="cuisine" name="cuisine">
+              <option value="auto">자동 분류</option>
+              <option value="korean">한식</option>
+              <option value="chinese">중식</option>
+              <option value="japanese">일식</option>
+              <option value="western">양식</option>
+              <option value="asian">아시안</option>
+              <option value="dessert">디저트</option>
+              <option value="snack">간식</option>
+              <option value="fusion">퓨전</option>
+              <option value="other">기타</option>
+            </select>
           </div>
           <div class="form__row">
             <label for="source">출처</label>
@@ -118,7 +133,8 @@
       <div class="recipe__preview" data-preview></div>
       <div class="recipe__details" data-details hidden>
         <div class="recipe__content" data-content hidden></div>
-        <div class="recipe__meta-block" data-tags-block hidden>
+        <div class="recipe__meta-block" data-meta-block hidden>
+          <p class="badge badge--muted" data-cuisine hidden></p>
           <p class="recipe__meta" data-tags></p>
         </div>
         <p class="recipe__notes" data-notes hidden></p>
@@ -165,6 +181,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=24" type="module"></script>
+  <script src="app.js?v=25" type="module"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ const recipeList = document.getElementById('recipeList');
 const emptyState = document.getElementById('emptyState');
 const searchInput = document.getElementById('searchInput');
 const sortSelect = document.getElementById('sortSelect');
+const cuisineSelect = document.getElementById('cuisine');
 const allFilterBtn = document.getElementById('allFilterBtn');
 const favoriteFilterBtn = document.getElementById('favoriteFilterBtn');
 const newRecipeBtn = document.getElementById('newRecipeBtn');
@@ -38,6 +39,18 @@ let editingIngredientId = null;
 let activeRecipeFilter = 'all';
 const favoritePendingIds = new Set();
 const expandedRecipeIds = new Set();
+const CUISINE_LABELS = {
+  korean: '한식',
+  chinese: '중식',
+  japanese: '일식',
+  western: '양식',
+  asian: '아시안',
+  dessert: '디저트',
+  snack: '간식',
+  fusion: '퓨전',
+  other: '기타',
+  auto: '자동 분류',
+};
 
 async function fetchRecipes() {
   const res = await fetch(API_BASE);
@@ -55,6 +68,7 @@ function handleSubmit(event) {
     notes: data.get('notes').trim(),
     tags: data.get('tags').split(',').map(t => t.trim()).filter(Boolean),
     source: data.get('source'),
+    cuisine: data.get('cuisine'),
     ingredients: ingredientDrafts.map(({ name, amount }) => ({ name, amount })),
   };
 
@@ -130,6 +144,7 @@ function focusForm() {
 
 function resetForm() {
   form.reset();
+  if (cuisineSelect) cuisineSelect.value = 'auto';
   focusForm();
   ingredientDrafts = [];
   renderIngredientDrafts();
@@ -486,7 +501,7 @@ function render() {
 
   let filtered = recipes.filter(r => {
     if (activeRecipeFilter === 'favorites' && !r.is_favorite) return false;
-    const haystack = [r.title, r.notes, r.tags.join(' '), (r.ingredients || []).map(i => i.name).join(' ')].join(' ').toLowerCase();
+    const haystack = [r.title, r.notes, r.cuisine, cuisineLabel(r.cuisine), r.tags.join(' '), (r.ingredients || []).map(i => i.name).join(' ')].join(' ').toLowerCase();
     return haystack.includes(keyword);
   });
 
@@ -528,14 +543,27 @@ function buildRecipeCard(recipe) {
     syncFavoriteButton(favoriteBtn, Boolean(recipe.is_favorite), favoritePendingIds.has(recipe.id));
     favoriteBtn.addEventListener('click', () => toggleFavorite(recipe, favoriteBtn));
   }
-  const tagsBlock = fragment.querySelector('[data-tags-block]');
+  const metaBlock = fragment.querySelector('[data-meta-block]');
+  const cuisineEl = fragment.querySelector('[data-cuisine]');
+  const cuisineText = cuisineLabel(recipe.cuisine);
+  if (cuisineEl) {
+    if (cuisineText) {
+      cuisineEl.textContent = cuisineText;
+      cuisineEl.hidden = false;
+    } else {
+      cuisineEl.hidden = true;
+    }
+  }
   const tagsEl = fragment.querySelector('[data-tags]');
-  if (tagsBlock && tagsEl) {
+  if (metaBlock && tagsEl) {
     if (tags.length) {
       tagsEl.textContent = `#${tags.join(' #')}`;
-      tagsBlock.hidden = false;
+      tagsEl.hidden = false;
+      metaBlock.hidden = false;
     } else {
-      tagsBlock.hidden = true;
+      tagsEl.textContent = '';
+      tagsEl.hidden = true;
+      metaBlock.hidden = !cuisineText;
     }
   }
 
@@ -612,6 +640,10 @@ function sourceLabel(source) {
     case 'instagram': return '인스타';
     default: return '기타';
   }
+}
+
+function cuisineLabel(cuisine) {
+  return CUISINE_LABELS[cuisine] || '';
 }
 
 function safeDomain(url) {
@@ -854,6 +886,7 @@ function openRecipeEditor(recipe) {
   document.getElementById('notes').value = recipe.notes || '';
   document.getElementById('tags').value = recipe.tags.join(', ');
   document.getElementById('source').value = recipe.source || 'other';
+  if (cuisineSelect) cuisineSelect.value = recipe.cuisine || 'auto';
   ingredientDrafts = (recipe.ingredients || []).map(ing => ({ name: ing.name, amount: ing.amount || '' }));
   renderIngredientDrafts();
   updateRecipeDrawerCopy(true);
