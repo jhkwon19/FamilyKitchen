@@ -762,35 +762,51 @@ p { margin: 0; }
   html[data-variant="pc"] .hero__content::after {
     content: none;
   }
+  html[data-variant="pc"] .hero__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "eyebrow ."
+      "title ."
+      "lede actions";
+    column-gap: 18px;
+    row-gap: 4px;
+    align-items: end;
+  }
   html[data-variant="pc"] .hero__content > * {
     position: relative;
     z-index: 1;
   }
   html[data-variant="pc"] .eyebrow {
+    grid-area: eyebrow;
     margin-bottom: 4px;
     font-size: 12px;
     max-width: 460px;
   }
   html[data-variant="pc"] .hero h1 {
+    grid-area: title;
     font-size: clamp(26px, 2.4vw, 36px);
     margin-bottom: 0;
     line-height: 1.2;
     max-width: 520px;
   }
   html[data-variant="pc"] .lede {
+    grid-area: lede;
     max-width: 640px;
     font-size: 13px;
     line-height: 1.35;
-    margin-top: 4px;
+    margin-top: 0;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   html[data-variant="pc"] .hero__actions {
-    width: 100%;
+    grid-area: actions;
+    width: auto;
     justify-content: flex-end;
-    margin-top: 10px;
+    margin-top: 0;
     position: relative;
     z-index: 2;
+    align-self: end;
   }
   html[data-variant="pc"] .hero__actions .btn {
     padding: 10px 18px;
