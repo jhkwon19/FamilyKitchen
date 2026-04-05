@@ -36,6 +36,7 @@ let activeIngredientRecipeId = null;
 let editingRecipeId = null;
 let editingIngredientId = null;
 let activeRecipeFilter = 'all';
+const favoritePendingIds = new Set();
 const expandedRecipeIds = new Set();
 
 async function fetchRecipes() {
@@ -383,8 +384,34 @@ function deleteRecipe(id) {
     .catch(err => alert(err.message));
 }
 
-function toggleFavorite(recipe) {
-  const nextValue = !recipe.is_favorite;
+function syncFavoriteButton(button, isFavorite, pending = false) {
+  if (!button) return;
+  button.textContent = isFavorite ? '★' : '☆';
+  button.classList.toggle('is-active', Boolean(isFavorite));
+  button.setAttribute('aria-pressed', String(Boolean(isFavorite)));
+  button.setAttribute('aria-label', isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가');
+}
+
+function toggleFavorite(recipe, button) {
+  if (favoritePendingIds.has(recipe.id)) return;
+
+  const prevValue = Boolean(recipe.is_favorite);
+  const nextValue = !prevValue;
+  const recipeIndex = recipes.findIndex(item => item.id === recipe.id);
+  if (recipeIndex >= 0) {
+    recipes[recipeIndex] = { ...recipes[recipeIndex], is_favorite: nextValue };
+    recipe = recipes[recipeIndex];
+  } else {
+    recipe.is_favorite = nextValue;
+  }
+
+  favoritePendingIds.add(recipe.id);
+  if (activeRecipeFilter === 'favorites') {
+    render();
+  } else {
+    syncFavoriteButton(button, nextValue, true);
+  }
+
   fetch(`${API_BASE}/${recipe.id}/favorite`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -398,13 +425,31 @@ function toggleFavorite(recipe) {
       return res.json();
     })
     .then(updated => {
-      const idx = recipes.findIndex(item => item.id === recipe.id);
-      if (idx >= 0) {
-        recipes[idx] = { ...recipes[idx], ...updated };
+      if (recipeIndex >= 0) {
+        recipes[recipeIndex] = { ...recipes[recipeIndex], ...updated };
       }
-      render();
+      favoritePendingIds.delete(recipe.id);
+      if (activeRecipeFilter === 'favorites') {
+        render();
+      } else {
+        syncFavoriteButton(button, Boolean(updated.is_favorite), false);
+      }
     })
-    .catch(err => alert(err.message));
+    .catch(err => {
+      favoritePendingIds.delete(recipe.id);
+      if (recipeIndex >= 0) {
+        recipes[recipeIndex] = { ...recipes[recipeIndex], is_favorite: prevValue };
+      } else {
+        recipe.is_favorite = prevValue;
+      }
+
+      if (activeRecipeFilter === 'favorites') {
+        render();
+      } else {
+        syncFavoriteButton(button, prevValue, false);
+      }
+      alert(err.message);
+    });
 }
 
 function setRecipeExpanded(recipeId, expanded, root, details, toggleBtn) {
@@ -480,11 +525,8 @@ function buildRecipeCard(recipe) {
   fragment.querySelector('[data-title]').textContent = recipe.title;
   const favoriteBtn = fragment.querySelector('[data-toggle-favorite]');
   if (favoriteBtn) {
-    favoriteBtn.textContent = recipe.is_favorite ? '★' : '☆';
-    favoriteBtn.classList.toggle('is-active', Boolean(recipe.is_favorite));
-    favoriteBtn.setAttribute('aria-pressed', String(Boolean(recipe.is_favorite)));
-    favoriteBtn.setAttribute('aria-label', recipe.is_favorite ? '즐겨찾기 해제' : '즐겨찾기 추가');
-    favoriteBtn.addEventListener('click', () => toggleFavorite(recipe));
+    syncFavoriteButton(favoriteBtn, Boolean(recipe.is_favorite), favoritePendingIds.has(recipe.id));
+    favoriteBtn.addEventListener('click', () => toggleFavorite(recipe, favoriteBtn));
   }
   const tagsBlock = fragment.querySelector('[data-tags-block]');
   const tagsEl = fragment.querySelector('[data-tags]');
