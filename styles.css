@@ -615,6 +615,11 @@ p { margin: 0; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.preview-tile__label--user-photo {
+  background: rgba(255, 248, 238, 0.92);
+  border-color: rgba(181, 84, 52, 0.20);
+  color: #8f4a30;
+}
 .preview-tile__site {
   bottom: 14px;
   max-width: calc(100% - 28px);

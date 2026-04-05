@@ -4,3 +4,4 @@ sqlalchemy
 pymysql
 httpx
 beautifulsoup4
+python-multipart

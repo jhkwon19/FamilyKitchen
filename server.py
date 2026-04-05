@@ -7,14 +7,14 @@ from typing import List, Optional
 from urllib.parse import quote_plus, urljoin, urlparse
 import re
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 import httpx
 from fastapi.responses import FileResponse, RedirectResponse
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, MetaData, String, Text, create_engine, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, LargeBinary, MetaData, String, Text, create_engine, func
 from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
 
 # Directories
@@ -52,6 +52,9 @@ class Recipe(Base):
     source = Column(String(32), nullable=False, default="other")
     cuisine = Column(String(32), nullable=False, default="other")
     is_favorite = Column(Boolean, nullable=False, default=False)
+    user_photo = Column(LargeBinary, nullable=True)
+    user_photo_mime = Column(String(50), nullable=True)
+    user_photo_name = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     ingredients = relationship("Ingredient", cascade="all, delete-orphan", back_populates="recipe")
 
@@ -80,6 +83,8 @@ class RecipeOut(RecipeIn):
     id: str
     cuisine: str = "other"
     is_favorite: bool = False
+    has_user_photo: bool = False
+    user_photo_url: Optional[str] = None
     created_at: datetime
     ingredients: List["IngredientOut"] = Field(default_factory=list)
 
@@ -103,6 +108,8 @@ class RecipeFavoriteIn(BaseModel):
 
 RecipeIn.update_forward_refs()
 RecipeOut.update_forward_refs()
+
+MAX_USER_PHOTO_BYTES = 8 * 1024 * 1024
 
 
 VALID_CUISINES = {
@@ -211,6 +218,8 @@ def serialize_recipe(recipe: Recipe) -> RecipeOut:
         source=recipe.source,
         cuisine=recipe.cuisine or "other",
         is_favorite=bool(recipe.is_favorite),
+        has_user_photo=bool(recipe.user_photo),
+        user_photo_url=f"/api/recipes/{recipe.id}/photo" if recipe.user_photo else None,
         created_at=recipe.created_at,
         ingredients=[
             IngredientOut(id=ing.id, name=ing.name, amount=ing.amount) for ing in recipe.ingredients
@@ -306,6 +315,63 @@ def toggle_recipe_favorite(recipe_id: str, payload: RecipeFavoriteIn, db: Sessio
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     recipe.is_favorite = payload.is_favorite
+    db.add(recipe)
+    db.commit()
+    db.refresh(recipe)
+    return serialize_recipe(recipe)
+
+
+@app.post("/api/recipes/{recipe_id}/photo", response_model=RecipeOut)
+async def upload_recipe_photo(recipe_id: str, photo: UploadFile = File(...), db: Session = Depends(get_db)):
+    recipe = db.get(Recipe, recipe_id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    if not photo.content_type or not photo.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
+
+    contents = await photo.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="업로드할 이미지가 비어 있습니다.")
+    if len(contents) > MAX_USER_PHOTO_BYTES:
+        raise HTTPException(status_code=400, detail="이미지는 8MB 이하만 업로드할 수 있습니다.")
+
+    recipe.user_photo = contents
+    recipe.user_photo_mime = photo.content_type
+    recipe.user_photo_name = photo.filename or "photo"
+    db.add(recipe)
+    db.commit()
+    db.refresh(recipe)
+    return serialize_recipe(recipe)
+
+
+@app.get("/api/recipes/{recipe_id}/photo")
+def get_recipe_photo(recipe_id: str, db: Session = Depends(get_db)):
+    recipe = db.get(Recipe, recipe_id)
+    if not recipe or not recipe.user_photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    headers = {
+        "Cache-Control": "no-store",
+    }
+    if recipe.user_photo_name:
+        headers["Content-Disposition"] = f'inline; filename="{recipe.user_photo_name}"'
+
+    return Response(
+        content=recipe.user_photo,
+        media_type=recipe.user_photo_mime or "application/octet-stream",
+        headers=headers,
+    )
+
+
+@app.delete("/api/recipes/{recipe_id}/photo", response_model=RecipeOut)
+def delete_recipe_photo(recipe_id: str, db: Session = Depends(get_db)):
+    recipe = db.get(Recipe, recipe_id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    recipe.user_photo = None
+    recipe.user_photo_mime = None
+    recipe.user_photo_name = None
     db.add(recipe)
     db.commit()
     db.refresh(recipe)

@@ -379,6 +379,30 @@ function buildPreview(url, source, options = {}) {
   return container;
 }
 
+function buildUserPhotoPreview(recipe) {
+  const tile = document.createElement('div');
+  tile.className = 'preview-tile preview-tile--user-photo';
+
+  const label = document.createElement('span');
+  label.className = 'preview-tile__label preview-tile__label--user-photo';
+  label.textContent = '내 사진';
+
+  const site = document.createElement('span');
+  site.className = 'preview-tile__site';
+  site.textContent = '직접 요리';
+
+  const img = document.createElement('img');
+  img.src = recipe.user_photo_url;
+  img.alt = `${recipe.title} 완성 사진`;
+  img.loading = 'lazy';
+  img.onerror = () => tile.classList.add('preview-tile--broken');
+
+  tile.appendChild(img);
+  tile.appendChild(label);
+  tile.appendChild(site);
+  return tile;
+}
+
 function buildCompactPreview(url, source) {
   const tile = document.createElement('div');
   tile.className = 'preview-tile';
@@ -485,6 +509,46 @@ function deleteRecipe(id) {
       render();
     })
     .catch(err => alert(err.message));
+}
+
+function updateRecipePhotoButtons(root, recipe) {
+  if (!root) return;
+  const uploadBtn = root.querySelector('[data-upload-photo]');
+  const deleteBtn = root.querySelector('[data-delete-photo]');
+  if (uploadBtn) {
+    uploadBtn.title = recipe.has_user_photo ? '내 사진 교체' : '내 사진 올리기';
+    uploadBtn.setAttribute('aria-label', recipe.has_user_photo ? '내 사진 교체' : '내 사진 올리기');
+  }
+  if (deleteBtn) {
+    deleteBtn.hidden = !recipe.has_user_photo;
+  }
+}
+
+async function uploadRecipePhoto(recipe, file) {
+  const formData = new FormData();
+  formData.append('photo', file);
+  const res = await fetch(`${API_BASE}/${recipe.id}/photo`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(msg || '사진 업로드 실패');
+  }
+  const updated = await res.json();
+  updated.user_photo_url = updated.user_photo_url ? `${updated.user_photo_url}?t=${Date.now()}` : null;
+  return updated;
+}
+
+async function removeRecipePhoto(recipe) {
+  const res = await fetch(`${API_BASE}/${recipe.id}/photo`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(msg || '사진 삭제 실패');
+  }
+  return res.json();
 }
 
 function syncFavoriteButton(button, isFavorite, pending = false) {
@@ -659,9 +723,11 @@ function buildRecipeCard(recipe) {
   }
 
   const preview = fragment.querySelector('[data-preview]');
-  const previewEl = recipe.source === 'youtube'
-    ? buildPreview(recipe.url, recipe.source)
-    : buildPreview(recipe.url, recipe.source, { compact: true });
+  const previewEl = recipe.has_user_photo && recipe.user_photo_url
+    ? buildUserPhotoPreview(recipe)
+    : recipe.source === 'youtube'
+      ? buildPreview(recipe.url, recipe.source)
+      : buildPreview(recipe.url, recipe.source, { compact: true });
   preview.appendChild(previewEl);
   if (recipe.source === 'blog') {
     preview.classList.add('recipe__preview--clickable');
@@ -707,6 +773,54 @@ function buildRecipeCard(recipe) {
   }
   if (addIngBtn) {
     addIngBtn.addEventListener('click', () => openIngredientDrawer(recipe));
+  }
+
+  const photoInput = fragment.querySelector('[data-photo-input]');
+  const uploadPhotoBtn = fragment.querySelector('[data-upload-photo]');
+  const deletePhotoBtn = fragment.querySelector('[data-delete-photo]');
+  updateRecipePhotoButtons(root, recipe);
+  if (uploadPhotoBtn && photoInput) {
+    uploadPhotoBtn.addEventListener('click', () => photoInput.click());
+    photoInput.addEventListener('change', async () => {
+      const [file] = photoInput.files || [];
+      if (!file) return;
+      try {
+        uploadPhotoBtn.disabled = true;
+        if (deletePhotoBtn) deletePhotoBtn.disabled = true;
+        const updated = await uploadRecipePhoto(recipe, file);
+        const recipeIndex = recipes.findIndex(item => item.id === recipe.id);
+        if (recipeIndex >= 0) {
+          recipes[recipeIndex] = { ...recipes[recipeIndex], ...updated, has_user_photo: true };
+        }
+        render();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        uploadPhotoBtn.disabled = false;
+        if (deletePhotoBtn) deletePhotoBtn.disabled = false;
+        photoInput.value = '';
+      }
+    });
+  }
+  if (deletePhotoBtn) {
+    deletePhotoBtn.addEventListener('click', async () => {
+      if (!confirm('올린 사진을 삭제할까요?')) return;
+      try {
+        deletePhotoBtn.disabled = true;
+        if (uploadPhotoBtn) uploadPhotoBtn.disabled = true;
+        const updated = await removeRecipePhoto(recipe);
+        const recipeIndex = recipes.findIndex(item => item.id === recipe.id);
+        if (recipeIndex >= 0) {
+          recipes[recipeIndex] = { ...recipes[recipeIndex], ...updated, has_user_photo: false, user_photo_url: null };
+        }
+        render();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        deletePhotoBtn.disabled = false;
+        if (uploadPhotoBtn) uploadPhotoBtn.disabled = false;
+      }
+    });
   }
 
   return fragment;
