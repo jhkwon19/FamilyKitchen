@@ -43,6 +43,7 @@ let editingIngredientId = null;
 let activeRecipeFilter = 'all';
 let activeCuisineFilter = 'all';
 let isCuisineMenuOpen = false;
+let isRecipeListRefreshing = false;
 const favoritePendingIds = new Set();
 const expandedRecipeIds = new Set();
 const CUISINE_LABELS = {
@@ -68,12 +69,8 @@ function syncMobileStickyOffset() {
   document.documentElement.style.setProperty('--mobile-sticky-offset', `${Math.ceil(hero.offsetHeight)}px`);
 }
 
-function restoreMobileRecipeHeaderPosition() {
-  const isMobileVariant = document.documentElement.dataset.variant === 'mobile';
-  if (!isMobileVariant || !panelHeader) return;
-  if (sessionStorage.getItem('scrollToRecipeHeaderOnReload') !== '1') return;
-  sessionStorage.removeItem('scrollToRecipeHeaderOnReload');
-
+function scrollRecipeHeaderIntoView() {
+  if (!panelHeader) return;
   const heroHeight = hero ? hero.offsetHeight : 0;
   const targetTop = Math.max(
     0,
@@ -81,10 +78,22 @@ function restoreMobileRecipeHeaderPosition() {
   );
 
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: targetTop, behavior: 'auto' });
-    });
+    window.scrollTo({ top: targetTop, behavior: 'auto' });
   });
+}
+
+async function refreshRecipeList({ focusRecipeHeader = false } = {}) {
+  if (isRecipeListRefreshing) return;
+  isRecipeListRefreshing = true;
+
+  try {
+    await fetchRecipes();
+    if (focusRecipeHeader) {
+      scrollRecipeHeaderIntoView();
+    }
+  } finally {
+    isRecipeListRefreshing = false;
+  }
 }
 
 async function fetchRecipes() {
@@ -1027,7 +1036,12 @@ function initPullToRefresh() {
       indicator.classList.remove('is-ready');
       indicator.textContent = '새로고침 중...';
       indicator.style.setProperty('--pull-offset', '48px');
-      window.location.reload();
+      refreshRecipeList({ focusRecipeHeader: true })
+        .catch(err => alert(err.message))
+        .finally(() => {
+          indicator.textContent = '당겨서 새로고침';
+          resetIndicator();
+        });
       return;
     }
 
@@ -1177,10 +1191,8 @@ resetBtn.addEventListener('click', resetForm);
 if (refreshRecipesBtn) {
   refreshRecipesBtn.addEventListener('click', () => {
     const isMobileVariant = document.documentElement.dataset.variant === 'mobile';
-    if (isMobileVariant) {
-      sessionStorage.setItem('scrollToRecipeHeaderOnReload', '1');
-    }
-    window.location.reload();
+    refreshRecipeList({ focusRecipeHeader: isMobileVariant })
+      .catch(err => alert(err.message));
   });
 }
 if (toggleFormBtn) toggleFormBtn.addEventListener('click', () => openDrawer(true));
@@ -1198,9 +1210,7 @@ window.addEventListener('keydown', e => {
 });
 
 syncMobileStickyOffset();
-restoreMobileRecipeHeaderPosition();
 window.addEventListener('load', syncMobileStickyOffset);
-window.addEventListener('load', restoreMobileRecipeHeaderPosition);
 window.addEventListener('resize', syncMobileStickyOffset);
 if (hero && 'ResizeObserver' in window) {
   new ResizeObserver(syncMobileStickyOffset).observe(hero);
