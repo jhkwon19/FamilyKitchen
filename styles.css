@@ -411,7 +411,7 @@ p { margin: 0; }
 }
 .recipe__completion {
   flex: 0 0 auto;
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   width: 22px;
@@ -422,6 +422,9 @@ p { margin: 0; }
   font-size: 13px;
   font-weight: 900;
   box-shadow: 0 8px 18px rgba(86, 131, 58, 0.22);
+}
+.recipe__completion.is-visible {
+  display: inline-flex;
 }
 .recipe__cuisine {
   flex: 0 0 auto;

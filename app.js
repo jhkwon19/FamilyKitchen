@@ -727,7 +727,9 @@ function buildRecipeCard(recipe) {
   fragment.querySelector('[data-title]').textContent = recipe.title;
   const completionBadge = fragment.querySelector('[data-completion-badge]');
   if (completionBadge) {
-    completionBadge.hidden = !recipe.has_user_photo;
+    const isCompleted = Boolean(recipe.has_user_photo && recipe.user_photo_url);
+    completionBadge.hidden = !isCompleted;
+    completionBadge.classList.toggle('is-visible', isCompleted);
   }
   const cuisinePill = fragment.querySelector('[data-cuisine-pill]');
   const cuisineText = cuisineLabel(recipe.cuisine);
