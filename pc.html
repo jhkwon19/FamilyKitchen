@@ -123,12 +123,14 @@
     <article class="recipe">
       <div class="recipe__header">
         <div class="recipe__headline">
-          <h3 data-title></h3>
+          <div class="recipe__title-row">
+            <h3 data-title></h3>
+            <span class="recipe__cuisine" data-cuisine-pill hidden></span>
+          </div>
         </div>
       </div>
       <div class="recipe__preview" data-preview></div>
       <div class="recipe__dock">
-        <span class="recipe__cuisine" data-cuisine-pill hidden></span>
         <div class="recipe__header-actions">
           <button type="button" class="recipe__toggle" data-toggle-details aria-expanded="false">상세</button>
           <button type="button" class="recipe__favorite" data-toggle-favorite aria-pressed="false" aria-label="즐겨찾기 추가">☆</button>

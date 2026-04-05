@@ -329,22 +329,14 @@ p { margin: 0; }
   padding: 20px 12px 16px 30px;
 }
 .recipe__dock {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  width: max-content;
-  margin: 10px 12px 0 auto;
-  padding: 6px 8px 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(138, 96, 68, 0.14);
-  background: linear-gradient(180deg, rgba(255, 251, 244, 0.96), rgba(247, 237, 223, 0.92));
-  box-shadow: 0 10px 24px rgba(104, 62, 35, 0.08);
+  margin: 10px 12px 0 30px;
 }
 .recipe__header-actions {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex: 0 0 auto;
 }
 .recipe__headline {
@@ -352,6 +344,12 @@ p { margin: 0; }
   gap: 0;
   min-width: 0;
   flex: 1;
+}
+.recipe__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 .recipe__cuisine {
   flex: 0 0 auto;
@@ -364,7 +362,6 @@ p { margin: 0; }
   font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 .recipe__cuisine--korean {
   background: rgba(198, 102, 67, 0.14);
@@ -412,7 +409,7 @@ p { margin: 0; }
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  padding: 0 3px 0 4px;
+  padding: 0 4px;
   transition: transform 0.12s ease, color 0.18s ease;
 }
 .recipe__favorite.is-active {
@@ -427,13 +424,14 @@ p { margin: 0; }
   line-height: 1.25;
   color: #3e271d;
   white-space: normal;
+  min-width: 0;
 }
 .recipe__toggle {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 10px;
+  padding: 7px 11px;
   border-radius: 999px;
   border: 1px solid rgba(181, 84, 52, 0.14);
   background: rgba(181, 84, 52, 0.10);
@@ -984,11 +982,12 @@ html[data-variant="mobile"] body {
   }
   .recipe__header { align-items: center; flex-direction: row; }
   .recipe__dock {
-    margin: 8px 10px 0 auto;
-    padding: 5px 7px 5px 8px;
-    gap: 6px;
+    margin: 8px 10px 0 24px;
   }
   .recipe__headline {
+    gap: 6px;
+  }
+  .recipe__title-row {
     gap: 6px;
   }
   .recipe__cuisine {
