@@ -770,8 +770,7 @@ p { margin: 0; }
       "title ."
       "lede actions";
     column-gap: 18px;
-    row-gap: 4px;
-    align-items: end;
+    row-gap: 2px;
   }
   html[data-variant="pc"] .hero__content > * {
     position: relative;
@@ -796,6 +795,7 @@ p { margin: 0; }
     font-size: 13px;
     line-height: 1.35;
     margin-top: 0;
+    align-self: start;
     overflow: hidden;
     text-overflow: ellipsis;
   }
