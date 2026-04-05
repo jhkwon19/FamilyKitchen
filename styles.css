@@ -1004,7 +1004,7 @@ html[data-variant="mobile"] body {
     backdrop-filter: blur(10px);
   }
   .hero__content {
-    padding: 16px 18px 14px;
+    padding: 16px 18px 14px 24px;
     border-radius: 22px;
   }
   .hero h1 {
