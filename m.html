@@ -25,7 +25,10 @@
   <main class="layout">
     <section class="panel">
       <div class="panel__header">
-        <h2>찜해둔 요리들</h2>
+        <div class="panel__title">
+          <h2>찜해둔 요리들</h2>
+          <span id="favoriteProgress" class="panel__progress" aria-live="polite">완료 0/0</span>
+        </div>
         <div class="panel__tools">
           <div class="filter-tabs" aria-label="레시피 필터">
             <button id="allFilterBtn" type="button" class="filter-tab is-active">전체</button>
@@ -137,6 +140,7 @@
         <div class="recipe__headline">
           <div class="recipe__title-row">
             <h3 data-title></h3>
+            <span class="recipe__completion" data-completion-badge hidden aria-label="내 사진 등록 완료" title="내 사진 등록 완료">✓</span>
             <span class="recipe__cuisine" data-cuisine-pill hidden></span>
           </div>
         </div>
@@ -197,6 +201,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=36" type="module"></script>
+  <script src="app.js?v=37" type="module"></script>
 </body>
 </html>

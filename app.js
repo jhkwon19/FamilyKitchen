@@ -32,6 +32,7 @@ const recipeDrawerEyebrow = document.getElementById('recipeDrawerEyebrow');
 const recipeDrawerTitle = document.getElementById('recipeDrawerTitle');
 const hero = document.querySelector('.hero');
 const panelHeader = document.querySelector('.panel__header');
+const favoriteProgress = document.getElementById('favoriteProgress');
 
 let recipes = [];
 const previewCache = new Map();
@@ -665,6 +666,8 @@ function setRecipeExpanded(recipeId, expanded, root, details, toggleBtn) {
 }
 
 function render() {
+  updateFavoriteProgress();
+
   const keyword = searchInput.value.trim().toLowerCase();
   const sortBy = sortSelect.value;
 
@@ -701,6 +704,15 @@ function render() {
   emptyState.style.display = filtered.length ? 'none' : 'block';
 }
 
+function updateFavoriteProgress() {
+  if (!favoriteProgress) return;
+
+  const favoriteRecipes = recipes.filter(recipe => recipe.is_favorite);
+  const completedFavorites = favoriteRecipes.filter(recipe => recipe.has_user_photo).length;
+
+  favoriteProgress.textContent = `완료 ${completedFavorites}/${favoriteRecipes.length}`;
+}
+
 function buildRecipeCard(recipe) {
   const tpl = document.getElementById('recipeCardTemplate');
   const fragment = tpl.content.cloneNode(true);
@@ -713,6 +725,10 @@ function buildRecipeCard(recipe) {
     : [];
 
   fragment.querySelector('[data-title]').textContent = recipe.title;
+  const completionBadge = fragment.querySelector('[data-completion-badge]');
+  if (completionBadge) {
+    completionBadge.hidden = !recipe.has_user_photo;
+  }
   const cuisinePill = fragment.querySelector('[data-cuisine-pill]');
   const cuisineText = cuisineLabel(recipe.cuisine);
   if (cuisinePill) {
