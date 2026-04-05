@@ -416,7 +416,7 @@ function setRecipeExpanded(recipeId, expanded, root, details, toggleBtn) {
   if (root) root.classList.toggle('is-open', expanded);
   if (details) details.hidden = !expanded;
   if (toggleBtn) {
-    toggleBtn.textContent = expanded ? '상세 접기' : '상세 보기';
+    toggleBtn.textContent = expanded ? '닫기' : '상세';
     toggleBtn.setAttribute('aria-expanded', String(expanded));
   }
 }

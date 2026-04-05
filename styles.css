@@ -332,7 +332,7 @@ p { margin: 0; }
 .recipe__header-actions {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 0 0 auto;
 }
 .recipe__headline {
@@ -371,12 +371,12 @@ p { margin: 0; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 9px 14px;
+  padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid rgba(181, 84, 52, 0.22);
   background: rgba(181, 84, 52, 0.08);
   color: var(--accent-deep);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
