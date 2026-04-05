@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from html import unescape
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 from urllib.parse import quote_plus, urljoin, urlparse
 import re
 
@@ -391,14 +391,14 @@ def delete_recipe(recipe_id: str, db: Session = Depends(get_db)):
 @app.api_route(
     "/api/recipes/{recipe_id}/ingredients",
     methods=["GET", "POST"],
-    response_model=IngredientOut | List[IngredientOut],
+    response_model=Union[IngredientOut, List[IngredientOut]],
 )
 @app.api_route(
     "/api/recipes/{recipe_id}/ingredients/",
     methods=["GET", "POST"],
-    response_model=IngredientOut | List[IngredientOut],
+    response_model=Union[IngredientOut, List[IngredientOut]],
 )
-def ingredients_endpoint(recipe_id: str, db: Session = Depends(get_db), payload: IngredientIn | None = None):
+def ingredients_endpoint(recipe_id: str, db: Session = Depends(get_db), payload: Optional[IngredientIn] = None):
     recipe = db.get(Recipe, recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
@@ -512,7 +512,7 @@ def _clean_text(value: str) -> str:
     return text.strip()
 
 
-async def _fetch_html(url: str) -> tuple[str, httpx.URL, str]:
+async def _fetch_html(url: str) -> Tuple[str, httpx.URL, str]:
     async with httpx.AsyncClient(follow_redirects=True, timeout=8) as client:
         resp = await client.get(
             url,
@@ -524,7 +524,7 @@ async def _fetch_html(url: str) -> tuple[str, httpx.URL, str]:
     return resp.text, resp.url, resp.headers.get("content-type", "")
 
 
-async def _resolve_article_html(url: str) -> tuple[str, str, str]:
+async def _resolve_article_html(url: str) -> Tuple[str, str, str]:
     text, final_url, content_type = await _fetch_html(url)
     parsed = urlparse(str(final_url))
 
