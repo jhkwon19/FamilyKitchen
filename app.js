@@ -291,12 +291,12 @@ function closeDrawer() {
 }
 
 function buildPreview(url, source, options = {}) {
-  const { compact = false } = options;
+  const { compact = false, autoplay = false } = options;
   if (compact) {
     return buildCompactPreview(url, source);
   }
   if (source === 'youtube') {
-    const embed = toYouTubeEmbed(url);
+    const embed = toYouTubeEmbed(url, { autoplay });
     if (embed) {
       const frame = document.createElement('div');
       frame.className = 'preview-frame';
@@ -474,9 +474,18 @@ function buildCompactPreview(url, source) {
   return tile;
 }
 
-function toYouTubeEmbed(url) {
+function toYouTubeEmbed(url, options = {}) {
+  const { autoplay = false } = options;
   const videoId = extractYouTubeId(url);
-  return videoId ? `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0` : null;
+  if (!videoId) return null;
+  const params = new URLSearchParams({
+    playsinline: '1',
+    rel: '0',
+  });
+  if (autoplay) {
+    params.set('autoplay', '1');
+  }
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 }
 
 function toYouTubeThumbnail(url) {
@@ -749,7 +758,7 @@ function buildRecipeCard(recipe) {
     ? buildUserPhotoPreview(recipe, {
         onPlay: recipe.source === 'youtube'
           ? () => {
-              preview.replaceChildren(buildPreview(recipe.url, recipe.source));
+              preview.replaceChildren(buildPreview(recipe.url, recipe.source, { autoplay: true }));
               preview.classList.remove('recipe__preview--clickable');
               preview.removeAttribute('role');
               preview.removeAttribute('tabindex');
