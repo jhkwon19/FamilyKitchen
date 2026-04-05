@@ -168,6 +168,10 @@ p { margin: 0; }
   gap: 8px;
   flex-wrap: wrap;
 }
+.filter-menu {
+  position: relative;
+  display: inline-flex;
+}
 .filter-tab {
   border: 1px solid rgba(138, 96, 68, 0.14);
   background: rgba(255, 249, 241, 0.88);
@@ -186,10 +190,19 @@ p { margin: 0; }
   box-shadow: 0 6px 18px rgba(104, 62, 35, 0.10);
 }
 .cuisine-filters {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 12;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: -2px 0 18px;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 96px;
+  padding: 8px;
+  border-radius: 18px;
+  border: 1px solid rgba(138, 96, 68, 0.14);
+  background: linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(247, 237, 223, 0.96));
+  box-shadow: 0 16px 32px rgba(104, 62, 35, 0.12);
 }
 .cuisine-filter {
   border: 1px solid rgba(138, 96, 68, 0.12);
@@ -1007,8 +1020,9 @@ html[data-variant="mobile"] body {
     justify-content: flex-start;
   }
   .cuisine-filters {
-    margin-top: 6px;
-    gap: 6px;
+    top: calc(100% + 6px);
+    left: 0;
+    right: auto;
   }
   .recipe__header { align-items: center; flex-direction: row; }
   .recipe__headline {

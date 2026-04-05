@@ -142,10 +142,17 @@ function setRecipeFilter(nextFilter) {
     favoriteFilterBtn.classList.toggle('is-active', isActive);
     favoriteFilterBtn.setAttribute('aria-pressed', String(isActive));
   }
-  if (cuisineFilterBar) {
-    cuisineFilterBar.hidden = nextFilter !== 'cuisine';
-  }
+  setCuisineMenuOpen(nextFilter === 'cuisine');
   render();
+}
+
+function setCuisineMenuOpen(isOpen) {
+  if (cuisineFilterBar) {
+    cuisineFilterBar.hidden = !isOpen;
+  }
+  if (cuisineFilterBtn) {
+    cuisineFilterBtn.setAttribute('aria-expanded', String(isOpen));
+  }
 }
 
 function setCuisineFilter(nextCuisine) {
@@ -161,6 +168,7 @@ function setCuisineFilter(nextCuisine) {
     setRecipeFilter('cuisine');
     return;
   }
+  setCuisineMenuOpen(false);
   render();
 }
 
@@ -1104,7 +1112,13 @@ form.addEventListener('submit', handleSubmit);
 searchInput.addEventListener('input', handleSearch);
 sortSelect.addEventListener('change', handleSort);
 if (allFilterBtn) allFilterBtn.addEventListener('click', () => setRecipeFilter('all'));
-if (cuisineFilterBtn) cuisineFilterBtn.addEventListener('click', () => setRecipeFilter('cuisine'));
+if (cuisineFilterBtn) {
+  cuisineFilterBtn.addEventListener('click', () => {
+    const nextOpen = cuisineFilterBar?.hidden ?? true;
+    setRecipeFilter('cuisine');
+    setCuisineMenuOpen(nextOpen);
+  });
+}
 if (favoriteFilterBtn) favoriteFilterBtn.addEventListener('click', () => setRecipeFilter('favorites'));
 if (cuisineFilterBar) {
   cuisineFilterBar.addEventListener('click', event => {
@@ -1113,6 +1127,13 @@ if (cuisineFilterBar) {
     setCuisineFilter(button.dataset.cuisineFilter || 'all');
   });
 }
+window.addEventListener('click', event => {
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+  if (!target.closest('.filter-menu')) {
+    setCuisineMenuOpen(false);
+  }
+});
 if (newRecipeBtn) newRecipeBtn.addEventListener('click', () => openDrawer(true));
 resetBtn.addEventListener('click', resetForm);
 if (refreshRecipesBtn) refreshRecipesBtn.addEventListener('click', () => window.location.reload());
