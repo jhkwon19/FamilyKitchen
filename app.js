@@ -386,7 +386,7 @@ function deleteRecipe(id) {
 function toggleFavorite(recipe) {
   const nextValue = !recipe.is_favorite;
   fetch(`${API_BASE}/${recipe.id}/favorite`, {
-    method: 'PATCH',
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ is_favorite: nextValue }),
   })

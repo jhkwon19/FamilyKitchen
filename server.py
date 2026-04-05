@@ -198,7 +198,7 @@ def update_recipe(recipe_id: str, payload: RecipeIn, db: Session = Depends(get_d
     return serialize_recipe(recipe)
 
 
-@app.patch("/api/recipes/{recipe_id}/favorite", response_model=RecipeOut)
+@app.api_route("/api/recipes/{recipe_id}/favorite", methods=["PATCH", "PUT", "POST"], response_model=RecipeOut)
 def toggle_recipe_favorite(recipe_id: str, payload: RecipeFavoriteIn, db: Session = Depends(get_db)):
     recipe = db.get(Recipe, recipe_id)
     if not recipe:
