@@ -421,6 +421,20 @@ function setRecipeExpanded(recipeId, expanded, root, details, toggleBtn) {
   }
 }
 
+function fitRecipeTitles() {
+  document.querySelectorAll('.recipe__headline h3').forEach(titleEl => {
+    titleEl.style.fontSize = '';
+    const computed = window.getComputedStyle(titleEl);
+    let fontSize = parseFloat(computed.fontSize) || 20;
+    const minFontSize = 11;
+
+    while (titleEl.scrollWidth > titleEl.clientWidth && fontSize > minFontSize) {
+      fontSize -= 0.5;
+      titleEl.style.fontSize = `${fontSize}px`;
+    }
+  });
+}
+
 function render() {
   const keyword = searchInput.value.trim().toLowerCase();
   const sortBy = sortSelect.value;
@@ -449,6 +463,7 @@ function render() {
       : '아직 저장된 레시피가 없습니다. 위에 링크를 추가해보세요.';
   }
   emptyState.style.display = filtered.length ? 'none' : 'block';
+  requestAnimationFrame(fitRecipeTitles);
 }
 
 function buildRecipeCard(recipe) {
@@ -1011,6 +1026,7 @@ window.addEventListener('keydown', e => {
     closeIngredientDrawer();
   }
 });
+window.addEventListener('resize', fitRecipeTitles);
 
 setRecipeFilter('all');
 initPullToRefresh();
