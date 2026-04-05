@@ -40,6 +40,7 @@ let editingRecipeId = null;
 let editingIngredientId = null;
 let activeRecipeFilter = 'all';
 let activeCuisineFilter = 'all';
+let isCuisineMenuOpen = false;
 const favoritePendingIds = new Set();
 const expandedRecipeIds = new Set();
 const CUISINE_LABELS = {
@@ -142,11 +143,14 @@ function setRecipeFilter(nextFilter) {
     favoriteFilterBtn.classList.toggle('is-active', isActive);
     favoriteFilterBtn.setAttribute('aria-pressed', String(isActive));
   }
-  setCuisineMenuOpen(nextFilter === 'cuisine');
+  if (nextFilter !== 'cuisine') {
+    setCuisineMenuOpen(false);
+  }
   render();
 }
 
 function setCuisineMenuOpen(isOpen) {
+  isCuisineMenuOpen = isOpen;
   if (cuisineFilterBar) {
     cuisineFilterBar.hidden = !isOpen;
   }
@@ -1114,9 +1118,12 @@ sortSelect.addEventListener('change', handleSort);
 if (allFilterBtn) allFilterBtn.addEventListener('click', () => setRecipeFilter('all'));
 if (cuisineFilterBtn) {
   cuisineFilterBtn.addEventListener('click', () => {
-    const nextOpen = cuisineFilterBar?.hidden ?? true;
-    setRecipeFilter('cuisine');
-    setCuisineMenuOpen(nextOpen);
+    if (activeRecipeFilter !== 'cuisine') {
+      setRecipeFilter('cuisine');
+      setCuisineMenuOpen(true);
+      return;
+    }
+    setCuisineMenuOpen(!isCuisineMenuOpen);
   });
 }
 if (favoriteFilterBtn) favoriteFilterBtn.addEventListener('click', () => setRecipeFilter('favorites'));
