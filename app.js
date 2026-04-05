@@ -5,6 +5,8 @@ const recipeList = document.getElementById('recipeList');
 const emptyState = document.getElementById('emptyState');
 const searchInput = document.getElementById('searchInput');
 const sortSelect = document.getElementById('sortSelect');
+const allFilterBtn = document.getElementById('allFilterBtn');
+const favoriteFilterBtn = document.getElementById('favoriteFilterBtn');
 const newRecipeBtn = document.getElementById('newRecipeBtn');
 const resetBtn = document.getElementById('resetBtn');
 const toggleFormBtn = document.getElementById('toggleFormBtn');
@@ -33,6 +35,7 @@ let ingredientDrafts = [];
 let activeIngredientRecipeId = null;
 let editingRecipeId = null;
 let editingIngredientId = null;
+let activeRecipeFilter = 'all';
 const expandedRecipeIds = new Set();
 
 async function fetchRecipes() {
@@ -101,6 +104,21 @@ function handleSearch() {
 }
 
 function handleSort() {
+  render();
+}
+
+function setRecipeFilter(nextFilter) {
+  activeRecipeFilter = nextFilter;
+  if (allFilterBtn) {
+    const isActive = nextFilter === 'all';
+    allFilterBtn.classList.toggle('is-active', isActive);
+    allFilterBtn.setAttribute('aria-pressed', String(isActive));
+  }
+  if (favoriteFilterBtn) {
+    const isActive = nextFilter === 'favorites';
+    favoriteFilterBtn.classList.toggle('is-active', isActive);
+    favoriteFilterBtn.setAttribute('aria-pressed', String(isActive));
+  }
   render();
 }
 
@@ -365,6 +383,30 @@ function deleteRecipe(id) {
     .catch(err => alert(err.message));
 }
 
+function toggleFavorite(recipe) {
+  const nextValue = !recipe.is_favorite;
+  fetch(`${API_BASE}/${recipe.id}/favorite`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_favorite: nextValue }),
+  })
+    .then(async res => {
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || '즐겨찾기 변경 실패');
+      }
+      return res.json();
+    })
+    .then(updated => {
+      const idx = recipes.findIndex(item => item.id === recipe.id);
+      if (idx >= 0) {
+        recipes[idx] = { ...recipes[idx], ...updated };
+      }
+      render();
+    })
+    .catch(err => alert(err.message));
+}
+
 function setRecipeExpanded(recipeId, expanded, root, details, toggleBtn) {
   if (expanded) {
     expandedRecipeIds.add(recipeId);
@@ -384,6 +426,7 @@ function render() {
   const sortBy = sortSelect.value;
 
   let filtered = recipes.filter(r => {
+    if (activeRecipeFilter === 'favorites' && !r.is_favorite) return false;
     const haystack = [r.title, r.notes, r.tags.join(' '), (r.ingredients || []).map(i => i.name).join(' ')].join(' ').toLowerCase();
     return haystack.includes(keyword);
   });
@@ -400,6 +443,11 @@ function render() {
     recipeList.appendChild(card);
   });
 
+  if (emptyState) {
+    emptyState.textContent = activeRecipeFilter === 'favorites'
+      ? '아직 즐겨찾기한 레시피가 없습니다.'
+      : '아직 저장된 레시피가 없습니다. 위에 링크를 추가해보세요.';
+  }
   emptyState.style.display = filtered.length ? 'none' : 'block';
 }
 
@@ -415,6 +463,14 @@ function buildRecipeCard(recipe) {
     : [];
 
   fragment.querySelector('[data-title]').textContent = recipe.title;
+  const favoriteBtn = fragment.querySelector('[data-toggle-favorite]');
+  if (favoriteBtn) {
+    favoriteBtn.textContent = recipe.is_favorite ? '★' : '☆';
+    favoriteBtn.classList.toggle('is-active', Boolean(recipe.is_favorite));
+    favoriteBtn.setAttribute('aria-pressed', String(Boolean(recipe.is_favorite)));
+    favoriteBtn.setAttribute('aria-label', recipe.is_favorite ? '즐겨찾기 해제' : '즐겨찾기 추가');
+    favoriteBtn.addEventListener('click', () => toggleFavorite(recipe));
+  }
   const tagsBlock = fragment.querySelector('[data-tags-block]');
   const tagsEl = fragment.querySelector('[data-tags]');
   if (tagsBlock && tagsEl) {
@@ -937,6 +993,8 @@ function initDesktopRecipeAutoScroll() {
 form.addEventListener('submit', handleSubmit);
 searchInput.addEventListener('input', handleSearch);
 sortSelect.addEventListener('change', handleSort);
+if (allFilterBtn) allFilterBtn.addEventListener('click', () => setRecipeFilter('all'));
+if (favoriteFilterBtn) favoriteFilterBtn.addEventListener('click', () => setRecipeFilter('favorites'));
 if (newRecipeBtn) newRecipeBtn.addEventListener('click', () => openDrawer(true));
 resetBtn.addEventListener('click', resetForm);
 if (refreshRecipesBtn) refreshRecipesBtn.addEventListener('click', () => window.location.reload());
@@ -954,6 +1012,7 @@ window.addEventListener('keydown', e => {
   }
 });
 
+setRecipeFilter('all');
 initPullToRefresh();
 initDesktopRecipeWheelScroll();
 initDesktopRecipeAutoScroll();

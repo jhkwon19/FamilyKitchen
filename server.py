@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 import httpx
 from fastapi.responses import FileResponse, RedirectResponse
-from sqlalchemy import Column, DateTime, ForeignKey, MetaData, String, Text, create_engine, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, MetaData, String, Text, create_engine, func
 from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
 
 # Directories
@@ -50,6 +50,7 @@ class Recipe(Base):
     notes = Column(Text, nullable=True)
     tags = Column(Text, nullable=True)  # comma-separated
     source = Column(String(32), nullable=False, default="other")
+    is_favorite = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     ingredients = relationship("Ingredient", cascade="all, delete-orphan", back_populates="recipe")
 
@@ -75,6 +76,7 @@ class RecipeIn(BaseModel):
 
 class RecipeOut(RecipeIn):
     id: str
+    is_favorite: bool = False
     created_at: datetime
     ingredients: List["IngredientOut"] = Field(default_factory=list)
 
@@ -90,6 +92,10 @@ class IngredientOut(IngredientIn):
     id: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RecipeFavoriteIn(BaseModel):
+    is_favorite: bool
 
 
 RecipeIn.update_forward_refs()
@@ -114,6 +120,22 @@ def get_db():
         db.close()
 
 
+def serialize_recipe(recipe: Recipe) -> RecipeOut:
+    return RecipeOut(
+        id=recipe.id,
+        title=recipe.title,
+        url=recipe.url,
+        notes=recipe.notes,
+        tags=tags_to_list(recipe.tags),
+        source=recipe.source,
+        is_favorite=bool(recipe.is_favorite),
+        created_at=recipe.created_at,
+        ingredients=[
+            IngredientOut(id=ing.id, name=ing.name, amount=ing.amount) for ing in recipe.ingredients
+        ],
+    )
+
+
 app = FastAPI(title="FamilyKitchen")
 app.add_middleware(
     CORSMiddleware,
@@ -132,21 +154,7 @@ def startup():
 @app.get("/api/recipes", response_model=List[RecipeOut])
 def list_recipes(db: Session = Depends(get_db)):
     items = db.query(Recipe).order_by(Recipe.created_at.desc()).all()
-    return [
-        RecipeOut(
-            id=item.id,
-            title=item.title,
-            url=item.url,
-            notes=item.notes,
-            tags=tags_to_list(item.tags),
-            source=item.source,
-            created_at=item.created_at,
-            ingredients=[
-                IngredientOut(id=ing.id, name=ing.name, amount=ing.amount) for ing in item.ingredients
-            ],
-        )
-        for item in items
-    ]
+    return [serialize_recipe(item) for item in items]
 
 
 @app.post("/api/recipes", response_model=RecipeOut)
@@ -158,6 +166,7 @@ def create_recipe(payload: RecipeIn, db: Session = Depends(get_db)):
         notes=payload.notes.strip() if payload.notes else None,
         tags=tags_to_string(payload.tags),
         source=payload.source,
+        is_favorite=False,
     )
     db.add(recipe)
     for ing in payload.ingredients:
@@ -170,18 +179,7 @@ def create_recipe(payload: RecipeIn, db: Session = Depends(get_db)):
         db.add(ingredient)
     db.commit()
     db.refresh(recipe)
-    return RecipeOut(
-        id=recipe.id,
-        title=recipe.title,
-        url=recipe.url,
-        notes=recipe.notes,
-        tags=tags_to_list(recipe.tags),
-        source=recipe.source,
-        created_at=recipe.created_at,
-        ingredients=[
-            IngredientOut(id=ing.id, name=ing.name, amount=ing.amount) for ing in recipe.ingredients
-        ],
-    )
+    return serialize_recipe(recipe)
 
 
 @app.put("/api/recipes/{recipe_id}", response_model=RecipeOut)
@@ -197,18 +195,19 @@ def update_recipe(recipe_id: str, payload: RecipeIn, db: Session = Depends(get_d
     db.add(recipe)
     db.commit()
     db.refresh(recipe)
-    return RecipeOut(
-        id=recipe.id,
-        title=recipe.title,
-        url=recipe.url,
-        notes=recipe.notes,
-        tags=tags_to_list(recipe.tags),
-        source=recipe.source,
-        created_at=recipe.created_at,
-        ingredients=[
-            IngredientOut(id=ing.id, name=ing.name, amount=ing.amount) for ing in recipe.ingredients
-        ],
-    )
+    return serialize_recipe(recipe)
+
+
+@app.patch("/api/recipes/{recipe_id}/favorite", response_model=RecipeOut)
+def toggle_recipe_favorite(recipe_id: str, payload: RecipeFavoriteIn, db: Session = Depends(get_db)):
+    recipe = db.get(Recipe, recipe_id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    recipe.is_favorite = payload.is_favorite
+    db.add(recipe)
+    db.commit()
+    db.refresh(recipe)
+    return serialize_recipe(recipe)
 
 
 @app.delete("/api/recipes/{recipe_id}", status_code=204)

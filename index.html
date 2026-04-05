@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=42">
+  <link rel="stylesheet" href="styles.css?v=43">
 </head>
 <body>
   <header class="hero">
@@ -29,13 +29,19 @@
     <section class="panel">
       <div class="panel__header">
         <h2>저장된 레시피</h2>
-        <div class="filter">
-          <input id="searchInput" type="search" placeholder="제목, 태그, 메모 검색">
-          <select id="sortSelect">
-            <option value="newest">최신순</option>
-            <option value="oldest">오래된순</option>
-            <option value="title">제목순</option>
-          </select>
+        <div class="panel__tools">
+          <div class="filter-tabs" aria-label="레시피 필터">
+            <button id="allFilterBtn" type="button" class="filter-tab is-active">전체</button>
+            <button id="favoriteFilterBtn" type="button" class="filter-tab">즐겨찾기</button>
+          </div>
+          <div class="filter">
+            <input id="searchInput" type="search" placeholder="제목, 태그, 메모 검색">
+            <select id="sortSelect">
+              <option value="newest">최신순</option>
+              <option value="oldest">오래된순</option>
+              <option value="title">제목순</option>
+            </select>
+          </div>
         </div>
       </div>
       <div id="recipeList" class="recipes"></div>
@@ -104,7 +110,10 @@
         <div class="recipe__headline">
           <h3 data-title></h3>
         </div>
-        <button type="button" class="recipe__toggle" data-toggle-details aria-expanded="false">상세 보기</button>
+        <div class="recipe__header-actions">
+          <button type="button" class="recipe__favorite" data-toggle-favorite aria-pressed="false" aria-label="즐겨찾기 추가">☆</button>
+          <button type="button" class="recipe__toggle" data-toggle-details aria-expanded="false">상세 보기</button>
+        </div>
       </div>
       <div class="recipe__preview" data-preview></div>
       <div class="recipe__details" data-details hidden>
@@ -123,6 +132,6 @@
     </article>
   </template>
 
-  <script src="app.js?v=22" type="module"></script>
+  <script src="app.js?v=23" type="module"></script>
 </body>
 </html>
