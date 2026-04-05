@@ -498,7 +498,7 @@ p { margin: 0; }
   color: #9e6813;
 }
 .recipe__headline h3 {
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.25;
   color: #3e271d;
   white-space: normal;
@@ -1094,7 +1094,7 @@ html[data-variant="mobile"] body {
   .recipe__details {
     padding-left: 24px;
   }
-  .recipe__headline h3 { font-size: 20px; }
+  .recipe__headline h3 { font-size: 18px; }
   .filter {
     flex-direction: row;
     align-items: center;
