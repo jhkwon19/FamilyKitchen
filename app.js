@@ -35,7 +35,6 @@ const panelHeader = document.querySelector('.panel__header');
 
 let recipes = [];
 const previewCache = new Map();
-const articleCache = new Map();
 let ingredientDrafts = [];
 let activeIngredientRecipeId = null;
 let editingRecipeId = null;
@@ -679,14 +678,12 @@ function buildRecipeCard(recipe) {
   }
 
   const details = fragment.querySelector('[data-details]');
-  const contentEl = fragment.querySelector('[data-content]');
   const toggleBtn = fragment.querySelector('[data-toggle-details]');
   if (toggleBtn) {
     setRecipeExpanded(recipe.id, isExpanded, root, details, toggleBtn);
     toggleBtn.addEventListener('click', () => {
       const next = !expandedRecipeIds.has(recipe.id);
       setRecipeExpanded(recipe.id, next, root, details, toggleBtn);
-      if (next) ensureRecipeContent(contentEl);
     });
   }
 
@@ -743,100 +740,6 @@ async function loadPreview(url) {
     .catch(() => null);
   previewCache.set(url, promise);
   return promise;
-}
-
-async function loadArticle(url) {
-  if (articleCache.has(url)) return articleCache.get(url);
-  const promise = fetch(`/api/article?url=${encodeURIComponent(url)}`)
-    .then(res => res.ok ? res.json() : null)
-    .catch(() => null);
-  articleCache.set(url, promise);
-  return promise;
-}
-
-function buildArticleViewer(url) {
-  const viewer = document.createElement('section');
-  viewer.className = 'article-viewer';
-
-  const status = document.createElement('p');
-  status.className = 'article-viewer__status';
-  status.textContent = '본문을 불러오는 중...';
-  viewer.appendChild(status);
-
-  loadArticle(url).then(article => {
-    viewer.innerHTML = '';
-    const paragraphs = article?.paragraphs || [];
-    if (!article || (!article.title && !paragraphs.length && !article.description && !article.snippet)) {
-      const empty = document.createElement('p');
-      empty.className = 'article-viewer__status';
-      empty.textContent = '이 링크는 앱 안에서 본문을 읽기 어렵습니다.';
-      viewer.appendChild(empty);
-      return;
-    }
-
-    if (article.image) {
-      const hero = document.createElement('img');
-      hero.className = 'article-viewer__image';
-      hero.src = article.image;
-      hero.alt = article.title || 'article image';
-      hero.loading = 'lazy';
-      hero.referrerPolicy = 'no-referrer';
-      hero.onerror = () => hero.remove();
-      viewer.appendChild(hero);
-    }
-
-    if (article.title) {
-      const title = document.createElement('h4');
-      title.className = 'article-viewer__title';
-      title.textContent = article.title;
-      viewer.appendChild(title);
-    }
-
-    const subtitleText = article.description || article.snippet || '';
-    if (subtitleText) {
-      const subtitle = document.createElement('p');
-      subtitle.className = 'article-viewer__subtitle';
-      subtitle.textContent = subtitleText;
-      viewer.appendChild(subtitle);
-    }
-
-    if (paragraphs.length) {
-      const body = document.createElement('div');
-      body.className = 'article-viewer__body';
-      paragraphs.forEach(text => {
-        const p = document.createElement('p');
-        p.textContent = text;
-        body.appendChild(p);
-      });
-      viewer.appendChild(body);
-    }
-
-    const footer = document.createElement('div');
-    footer.className = 'article-viewer__footer';
-
-    const site = document.createElement('span');
-    site.className = 'article-viewer__site';
-    site.textContent = article.site || safeDomain(url);
-
-    const openBtn = document.createElement('button');
-    openBtn.type = 'button';
-    openBtn.className = 'btn btn-ghost';
-    openBtn.textContent = '원문 열기';
-    openBtn.addEventListener('click', () => openLink(url));
-
-    footer.appendChild(site);
-    footer.appendChild(openBtn);
-    viewer.appendChild(footer);
-  });
-
-  return viewer;
-}
-
-function ensureRecipeContent(contentEl) {
-  if (!contentEl) return;
-  contentEl.hidden = true;
-  contentEl.replaceChildren();
-  delete contentEl.dataset.loaded;
 }
 
 function addIngredient(recipeId) {
