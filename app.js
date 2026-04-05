@@ -707,10 +707,10 @@ function render() {
 function updateFavoriteProgress() {
   if (!favoriteProgress) return;
 
-  const favoriteRecipes = recipes.filter(recipe => recipe.is_favorite);
-  const completedFavorites = favoriteRecipes.filter(recipe => recipe.has_user_photo).length;
+  const totalRecipes = recipes.length;
+  const completedRecipes = recipes.filter(recipe => recipe.has_user_photo && recipe.user_photo_url).length;
 
-  favoriteProgress.textContent = `완료 ${completedFavorites}/${favoriteRecipes.length}`;
+  favoriteProgress.textContent = `완료 ${completedRecipes}/${totalRecipes}`;
 }
 
 function buildRecipeCard(recipe) {
