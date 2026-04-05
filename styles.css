@@ -620,6 +620,32 @@ p { margin: 0; }
   border-color: rgba(181, 84, 52, 0.20);
   color: #8f4a30;
 }
+.preview-tile__label--source {
+  left: auto;
+  right: 14px;
+  background: rgba(65, 39, 25, 0.78);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff9f1;
+}
+.preview-tile__play {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(65, 39, 25, 0.74);
+  color: #fff9f1;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1;
+  box-shadow: 0 10px 24px rgba(32, 18, 11, 0.18);
+}
+.preview-tile__play:hover {
+  background: rgba(65, 39, 25, 0.84);
+}
 .preview-tile__site {
   bottom: 14px;
   max-width: calc(100% - 28px);

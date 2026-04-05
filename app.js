@@ -379,13 +379,35 @@ function buildPreview(url, source, options = {}) {
   return container;
 }
 
-function buildUserPhotoPreview(recipe) {
+function buildUserPhotoPreview(recipe, options = {}) {
+  const { onPlay = null } = options;
   const tile = document.createElement('div');
   tile.className = 'preview-tile preview-tile--user-photo';
 
   const label = document.createElement('span');
   label.className = 'preview-tile__label preview-tile__label--user-photo';
   label.textContent = '내 사진';
+
+  if (recipe.source === 'youtube') {
+    const sourceBadge = document.createElement('span');
+    sourceBadge.className = 'preview-tile__label preview-tile__label--source';
+    sourceBadge.textContent = '영상 보기';
+    tile.appendChild(sourceBadge);
+
+    if (typeof onPlay === 'function') {
+      const playBtn = document.createElement('button');
+      playBtn.type = 'button';
+      playBtn.className = 'preview-tile__play';
+      playBtn.setAttribute('aria-label', `${recipe.title} 영상 재생`);
+      playBtn.textContent = '▶';
+      playBtn.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        onPlay();
+      });
+      tile.appendChild(playBtn);
+    }
+  }
 
   const site = document.createElement('span');
   site.className = 'preview-tile__site';
@@ -724,12 +746,22 @@ function buildRecipeCard(recipe) {
 
   const preview = fragment.querySelector('[data-preview]');
   const previewEl = recipe.has_user_photo && recipe.user_photo_url
-    ? buildUserPhotoPreview(recipe)
+    ? buildUserPhotoPreview(recipe, {
+        onPlay: recipe.source === 'youtube'
+          ? () => {
+              preview.replaceChildren(buildPreview(recipe.url, recipe.source));
+              preview.classList.remove('recipe__preview--clickable');
+              preview.removeAttribute('role');
+              preview.removeAttribute('tabindex');
+              preview.removeAttribute('aria-label');
+            }
+          : null,
+      })
     : recipe.source === 'youtube'
       ? buildPreview(recipe.url, recipe.source)
       : buildPreview(recipe.url, recipe.source, { compact: true });
   preview.appendChild(previewEl);
-  if (recipe.source === 'blog') {
+  if (recipe.source === 'blog' || (recipe.has_user_photo && recipe.user_photo_url && recipe.source !== 'youtube')) {
     preview.classList.add('recipe__preview--clickable');
     preview.setAttribute('role', 'link');
     preview.setAttribute('tabindex', '0');
