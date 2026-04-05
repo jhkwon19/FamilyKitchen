@@ -63,14 +63,14 @@ p { margin: 0; }
   display: flex;
   justify-content: space-between;
   gap: 32px;
-  padding: 28px 7vw 14px;
+  padding: 20px 7vw 10px;
   position: relative;
   flex-wrap: wrap;
 }
 .hero__content {
   max-width: 980px;
   width: 100%;
-  padding: 22px 30px;
+  padding: 18px 28px 16px;
   border-radius: 34px;
   border: 1px solid rgba(119, 74, 45, 0.14);
   background:
@@ -101,12 +101,12 @@ p { margin: 0; }
   letter-spacing: 0.12em;
   color: var(--accent-deep);
   font-weight: 700;
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 12px;
 }
 .hero h1 {
   font-size: clamp(34px, 4.2vw, 54px);
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   color: #40261c;
   line-height: 1.15;
 }
@@ -118,7 +118,7 @@ p { margin: 0; }
   margin: 0;
   white-space: nowrap;
 }
-.hero__actions { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+.hero__actions { margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
 .layout {
   padding: 0 7vw 64px;
   display: grid;
@@ -598,15 +598,15 @@ p { margin: 0; }
     padding-bottom: 32px;
   }
   html[data-variant="pc"] .hero {
-    padding: 14px 7vw 8px;
+    padding: 8px 7vw 4px;
     align-items: flex-start;
   }
   html[data-variant="pc"] .hero__content {
     max-width: none;
     width: 100%;
     display: block;
-    min-height: 192px;
-    padding: 24px 32px 22px;
+    min-height: 0;
+    padding: 16px 28px 14px;
     background:
       linear-gradient(90deg, rgba(252, 246, 238, 0.96) 0%, rgba(252, 246, 238, 0.90) 34%, rgba(252, 246, 238, 0.48) 58%, rgba(252, 246, 238, 0.10) 74%, rgba(252, 246, 238, 0.00) 100%),
       url("assets/image.jpg") right center / cover no-repeat;
@@ -640,15 +640,15 @@ p { margin: 0; }
   html[data-variant="pc"] .lede {
     max-width: 640px;
     font-size: 13px;
-    line-height: 1.4;
-    margin-top: 6px;
+    line-height: 1.35;
+    margin-top: 4px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   html[data-variant="pc"] .hero__actions {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 14px;
+    right: 18px;
     margin-top: 0;
     z-index: 2;
   }
