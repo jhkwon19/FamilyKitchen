@@ -59,6 +59,14 @@ const CUISINE_LABELS = {
   auto: '자동 분류',
 };
 
+function updateCuisineFilterButtonLabel() {
+  if (!cuisineFilterBtn) return;
+  const label = activeCuisineFilter === 'all'
+    ? '분류'
+    : `분류: ${CUISINE_LABELS[activeCuisineFilter] || activeCuisineFilter}`;
+  cuisineFilterBtn.textContent = label;
+}
+
 function syncMobileStickyOffset() {
   if (!hero) return;
   const isMobileVariant = document.documentElement.dataset.variant === 'mobile';
@@ -183,6 +191,7 @@ function setRecipeFilter(nextFilter) {
     favoriteFilterBtn.classList.toggle('is-active', isActive);
     favoriteFilterBtn.setAttribute('aria-pressed', String(isActive));
   }
+  updateCuisineFilterButtonLabel();
   if (nextFilter !== 'cuisine') {
     setCuisineMenuOpen(false);
   }
@@ -208,6 +217,7 @@ function setCuisineFilter(nextCuisine) {
       button.setAttribute('aria-pressed', String(isActive));
     });
   }
+  updateCuisineFilterButtonLabel();
   if (activeRecipeFilter !== 'cuisine') {
     setRecipeFilter('cuisine');
     return;
