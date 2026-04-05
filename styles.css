@@ -430,6 +430,7 @@ p { margin: 0; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 28px;
   height: 28px;
   padding: 0;
@@ -445,15 +446,22 @@ p { margin: 0; }
   border-color: rgba(181, 84, 52, 0.24);
   transform: translateY(-1px);
 }
+.recipe__toggle::before,
+.recipe__toggle::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
 .recipe__toggle::before {
-  content: "⌄";
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
-  transition: transform 0.18s ease;
+  transform: rotate(90deg);
 }
 .recipe.is-open .recipe__toggle::before {
-  transform: rotate(180deg);
+  opacity: 0;
+  transform: rotate(90deg) scaleX(0);
 }
 .recipe__details {
   display: grid;
