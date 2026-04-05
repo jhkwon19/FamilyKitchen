@@ -448,20 +448,19 @@ p { margin: 0; }
 }
 .recipe__toggle::before,
 .recipe__toggle::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 1.5px;
-  border-radius: 999px;
-  background: currentColor;
-  transition: transform 0.18s ease, opacity 0.18s ease;
+  content: none;
 }
 .recipe__toggle::before {
-  transform: rotate(90deg);
+  content: "⋯";
+  position: static;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: -0.08em;
+  transform: translateY(-1px);
 }
-.recipe.is-open .recipe__toggle::before {
-  opacity: 0;
-  transform: rotate(90deg) scaleX(0);
+.recipe.is-open .recipe__toggle {
+  background: rgba(181, 84, 52, 0.16);
+  border-color: rgba(181, 84, 52, 0.24);
 }
 .recipe__details {
   display: grid;
