@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=47">
+  <link rel="stylesheet" href="styles.css?v=48">
 </head>
 <body>
   <header class="hero">
@@ -16,15 +16,11 @@
       <h1>오늘 뭐 해먹지?</h1>
       <p class="lede">같이 먹고 싶은 메뉴, 다시 해보고 싶은 요리를 한 권의 레시피 노트처럼 차곡차곡 담아보아요.</p>
       <div class="hero__actions">
-        <button id="newRecipeBtn" class="btn btn-primary desktop-only">새 레시피 추가</button>
+        <button id="refreshRecipesBtn" class="btn btn-ghost">새로고침</button>
+        <button id="toggleFormBtn" class="btn btn-primary">레시피 추가하기</button>
       </div>
     </div>
   </header>
-
-  <div class="mobile-only toggle-wrap top-toggle">
-    <button id="refreshRecipesBtn" class="btn btn-primary">새로고침</button>
-    <button id="toggleFormBtn" class="btn btn-primary">레시피 추가하기</button>
-  </div>
 
   <main class="layout">
     <section class="panel">

@@ -999,7 +999,8 @@ html[data-variant="mobile"] body {
     border-radius: 26px;
   }
   .hero h1 {
-    font-size: clamp(30px, 9vw, 40px);
+    font-size: clamp(26px, 7.6vw, 32px);
+    line-height: 1.12;
   }
   .lede {
     font-size: 14px;
@@ -1096,5 +1097,20 @@ html[data-variant="mobile"] body {
 @media (max-width: 540px) {
   .hero__actions { width: 100%; }
   .btn { width: 100%; text-align: center; }
+  html[data-variant="mobile"] .hero__actions {
+    margin-top: 10px;
+    gap: 8px;
+    align-items: center;
+  }
+  html[data-variant="mobile"] .hero__actions .btn {
+    width: auto;
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    font-size: 13px;
+    box-shadow: none;
+  }
+  html[data-variant="mobile"] .hero__actions .btn-primary {
+    box-shadow: 0 10px 22px rgba(181, 84, 52, 0.18);
+  }
   .form__actions { flex-direction: column; }
 }
