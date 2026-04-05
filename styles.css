@@ -329,16 +329,22 @@ p { margin: 0; }
   padding: 20px 12px 16px 30px;
 }
 .recipe__dock {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 10px 12px 0 30px;
+  gap: 10px;
+  width: max-content;
+  margin: 10px 12px 0 auto;
+  padding: 6px 8px 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(138, 96, 68, 0.14);
+  background: linear-gradient(180deg, rgba(255, 251, 244, 0.96), rgba(247, 237, 223, 0.92));
+  box-shadow: 0 10px 24px rgba(104, 62, 35, 0.08);
 }
 .recipe__header-actions {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex: 0 0 auto;
 }
 .recipe__headline {
@@ -358,6 +364,7 @@ p { margin: 0; }
   font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 .recipe__cuisine--korean {
   background: rgba(198, 102, 67, 0.14);
@@ -402,10 +409,10 @@ p { margin: 0; }
   border: 0;
   background: transparent;
   color: #c18a2e;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 0 3px 0 4px;
   transition: transform 0.12s ease, color 0.18s ease;
 }
 .recipe__favorite.is-active {
@@ -413,6 +420,7 @@ p { margin: 0; }
 }
 .recipe__favorite:hover {
   transform: translateY(-1px);
+  color: #9e6813;
 }
 .recipe__headline h3 {
   font-size: 20px;
@@ -425,17 +433,24 @@ p { margin: 0; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 7px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(181, 84, 52, 0.22);
-  background: rgba(181, 84, 52, 0.08);
+  border: 1px solid rgba(181, 84, 52, 0.14);
+  background: rgba(181, 84, 52, 0.10);
   color: var(--accent-deep);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+}
+.recipe__toggle:hover {
+  background: rgba(181, 84, 52, 0.16);
+  border-color: rgba(181, 84, 52, 0.24);
+  transform: translateY(-1px);
 }
 .recipe__toggle::after {
   content: "▾";
+  font-size: 10px;
   transition: transform 0.18s ease;
 }
 .recipe.is-open .recipe__toggle::after {
@@ -969,7 +984,8 @@ html[data-variant="mobile"] body {
   }
   .recipe__header { align-items: center; flex-direction: row; }
   .recipe__dock {
-    padding: 10px 12px 0 24px;
+    margin: 8px 10px 0 auto;
+    padding: 5px 7px 5px 8px;
     gap: 6px;
   }
   .recipe__headline {
