@@ -336,10 +336,59 @@ p { margin: 0; }
   flex: 0 0 auto;
 }
 .recipe__headline {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
   flex: 1;
+}
+.recipe__cuisine {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.recipe__cuisine--korean {
+  background: rgba(198, 102, 67, 0.14);
+  color: #a04427;
+}
+.recipe__cuisine--chinese {
+  background: rgba(198, 70, 52, 0.16);
+  color: #9d3023;
+}
+.recipe__cuisine--japanese {
+  background: rgba(125, 128, 80, 0.16);
+  color: #586031;
+}
+.recipe__cuisine--western {
+  background: rgba(214, 160, 76, 0.18);
+  color: #8f5b12;
+}
+.recipe__cuisine--asian {
+  background: rgba(85, 148, 127, 0.16);
+  color: #2f6d5e;
+}
+.recipe__cuisine--dessert {
+  background: rgba(216, 123, 162, 0.16);
+  color: #a64772;
+}
+.recipe__cuisine--snack {
+  background: rgba(235, 153, 88, 0.18);
+  color: #a85719;
+}
+.recipe__cuisine--fusion {
+  background: rgba(126, 104, 196, 0.16);
+  color: #5a46a3;
+}
+.recipe__cuisine--other {
+  background: rgba(138, 96, 68, 0.12);
+  color: #765441;
 }
 .recipe__favorite {
   display: inline-flex;
@@ -914,6 +963,13 @@ html[data-variant="mobile"] body {
     justify-content: flex-start;
   }
   .recipe__header { align-items: center; flex-direction: row; }
+  .recipe__headline {
+    gap: 6px;
+  }
+  .recipe__cuisine {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
   .recipe__toggle { align-self: auto; }
   .recipe__actions { justify-content: flex-end; }
   .recipe__header,

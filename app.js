@@ -538,22 +538,23 @@ function buildRecipeCard(recipe) {
     : [];
 
   fragment.querySelector('[data-title]').textContent = recipe.title;
+  const cuisinePill = fragment.querySelector('[data-cuisine-pill]');
+  const cuisineText = cuisineLabel(recipe.cuisine);
+  if (cuisinePill) {
+    if (cuisineText) {
+      cuisinePill.textContent = cuisineText;
+      cuisinePill.hidden = false;
+      cuisinePill.className = `recipe__cuisine recipe__cuisine--${recipe.cuisine || 'other'}`;
+    } else {
+      cuisinePill.hidden = true;
+    }
+  }
   const favoriteBtn = fragment.querySelector('[data-toggle-favorite]');
   if (favoriteBtn) {
     syncFavoriteButton(favoriteBtn, Boolean(recipe.is_favorite), favoritePendingIds.has(recipe.id));
     favoriteBtn.addEventListener('click', () => toggleFavorite(recipe, favoriteBtn));
   }
   const metaBlock = fragment.querySelector('[data-meta-block]');
-  const cuisineEl = fragment.querySelector('[data-cuisine]');
-  const cuisineText = cuisineLabel(recipe.cuisine);
-  if (cuisineEl) {
-    if (cuisineText) {
-      cuisineEl.textContent = cuisineText;
-      cuisineEl.hidden = false;
-    } else {
-      cuisineEl.hidden = true;
-    }
-  }
   const tagsEl = fragment.querySelector('[data-tags]');
   if (metaBlock && tagsEl) {
     if (tags.length) {
@@ -563,7 +564,7 @@ function buildRecipeCard(recipe) {
     } else {
       tagsEl.textContent = '';
       tagsEl.hidden = true;
-      metaBlock.hidden = !cuisineText;
+      metaBlock.hidden = true;
     }
   }
 
