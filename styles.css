@@ -786,10 +786,10 @@ p { margin: 0; }
     text-overflow: ellipsis;
   }
   html[data-variant="pc"] .hero__actions {
-    position: absolute;
-    top: 14px;
-    right: 18px;
-    margin-top: 0;
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 10px;
+    position: relative;
     z-index: 2;
   }
   html[data-variant="pc"] .hero__actions .btn {
