@@ -31,6 +31,7 @@ const ingModalList = document.getElementById('ingModalList');
 const recipeDrawerEyebrow = document.getElementById('recipeDrawerEyebrow');
 const recipeDrawerTitle = document.getElementById('recipeDrawerTitle');
 const hero = document.querySelector('.hero');
+const panelHeader = document.querySelector('.panel__header');
 
 let recipes = [];
 const previewCache = new Map();
@@ -65,6 +66,25 @@ function syncMobileStickyOffset() {
     return;
   }
   document.documentElement.style.setProperty('--mobile-sticky-offset', `${Math.ceil(hero.offsetHeight)}px`);
+}
+
+function restoreMobileRecipeHeaderPosition() {
+  const isMobileVariant = document.documentElement.dataset.variant === 'mobile';
+  if (!isMobileVariant || !panelHeader) return;
+  if (sessionStorage.getItem('scrollToRecipeHeaderOnReload') !== '1') return;
+  sessionStorage.removeItem('scrollToRecipeHeaderOnReload');
+
+  const heroHeight = hero ? hero.offsetHeight : 0;
+  const targetTop = Math.max(
+    0,
+    panelHeader.getBoundingClientRect().top + window.scrollY - heroHeight - 4
+  );
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: targetTop, behavior: 'auto' });
+    });
+  });
 }
 
 async function fetchRecipes() {
@@ -1154,7 +1174,15 @@ window.addEventListener('click', event => {
 });
 if (newRecipeBtn) newRecipeBtn.addEventListener('click', () => openDrawer(true));
 resetBtn.addEventListener('click', resetForm);
-if (refreshRecipesBtn) refreshRecipesBtn.addEventListener('click', () => window.location.reload());
+if (refreshRecipesBtn) {
+  refreshRecipesBtn.addEventListener('click', () => {
+    const isMobileVariant = document.documentElement.dataset.variant === 'mobile';
+    if (isMobileVariant) {
+      sessionStorage.setItem('scrollToRecipeHeaderOnReload', '1');
+    }
+    window.location.reload();
+  });
+}
 if (toggleFormBtn) toggleFormBtn.addEventListener('click', () => openDrawer(true));
 if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
 if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
@@ -1170,7 +1198,9 @@ window.addEventListener('keydown', e => {
 });
 
 syncMobileStickyOffset();
+restoreMobileRecipeHeaderPosition();
 window.addEventListener('load', syncMobileStickyOffset);
+window.addEventListener('load', restoreMobileRecipeHeaderPosition);
 window.addEventListener('resize', syncMobileStickyOffset);
 if (hero && 'ResizeObserver' in window) {
   new ResizeObserver(syncMobileStickyOffset).observe(hero);
