@@ -664,11 +664,6 @@ p {
   align-items: flex-start;
 }
 
-.cart-item__title {
-  font-size: 14px;
-  line-height: 1.2;
-}
-
 .cart-item__fields {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
