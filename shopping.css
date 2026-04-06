@@ -1250,23 +1250,33 @@ p {
 
   .layout {
     gap: 4px;
-    align-items: start;
+    align-items: stretch;
+    min-height: 0;
+    height: 100%;
     padding-bottom: 10px;
     overflow: hidden;
   }
 
   .panel--search {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     overflow: hidden;
   }
 
   .panel--cart {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     position: static;
     overflow: hidden;
   }
 
   .product-grid,
   .cart-list {
-    max-height: calc(100vh - 300px);
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
     overflow: auto;
     padding-right: 4px;
   }
