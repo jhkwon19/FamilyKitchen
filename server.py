@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from html import unescape
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
-from urllib.parse import quote_plus, urljoin, urlparse, unquote
+from urllib.parse import quote, quote_plus, urljoin, urlparse, unquote
 import re
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
@@ -2209,6 +2209,28 @@ async def _load_costco_product_details(url: str, force_refresh: bool = False) ->
     if cached and not force_refresh and datetime.utcnow() - cached["fetched_at"] < COSTCO_SHOPPING_PRODUCT_CACHE_TTL:
         return cached["item"]
 
+    product_id_match = re.search(r"/p/([^/?#]+)", url)
+    product_id = product_id_match.group(1) if product_id_match else ""
+    if product_id:
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=8) as client:
+                response = await client.get(
+                    f"https://www.costco.co.kr/rest/v2/korea/products/{quote(product_id)}",
+                    params={"fields": "FULL"},
+                    headers={
+                        "User-Agent": DEFAULT_UA,
+                        "Accept": "application/json,text/plain,*/*",
+                    },
+                )
+                response.raise_for_status()
+                product = response.json()
+            item = _build_costco_search_api_item(product)
+            if item:
+                COSTCO_SHOPPING_PRODUCT_CACHE[url] = {"item": item, "fetched_at": datetime.utcnow()}
+                return item
+        except Exception:
+            pass
+
     try:
         html, final_url, content_type = await _fetch_html(url)
         if "text/html" not in content_type:
@@ -2739,6 +2761,16 @@ def shopping_products_status(db: Session = Depends(get_db)):
     unsynced_count = db.query(CostcoProduct).filter(CostcoProduct.is_active.is_(True), CostcoProduct.last_synced_at.is_(None)).count()
     priced_count = db.query(CostcoProduct).filter(CostcoProduct.price.isnot(None)).count()
     image_count = db.query(CostcoProduct).filter(CostcoProduct.image_url.isnot(None), CostcoProduct.image_url != "").count()
+    discount_count = (
+        db.query(CostcoProduct)
+        .filter(CostcoProduct.discount_amount.isnot(None), CostcoProduct.discount_amount > 0)
+        .count()
+    )
+    discount_period_count = (
+        db.query(CostcoProduct)
+        .filter(CostcoProduct.discount_period_text.isnot(None), CostcoProduct.discount_period_text != "")
+        .count()
+    )
     latest_synced_at = db.query(func.max(CostcoProduct.last_synced_at)).scalar()
     latest_seen_at = db.query(func.max(CostcoProduct.last_seen_at)).scalar()
     return {
@@ -2748,6 +2780,8 @@ def shopping_products_status(db: Session = Depends(get_db)):
         "unsynced_count": unsynced_count,
         "priced_count": priced_count,
         "image_count": image_count,
+        "discount_count": discount_count,
+        "discount_period_count": discount_period_count,
         "latest_synced_at": latest_synced_at.isoformat() if latest_synced_at else None,
         "latest_seen_at": latest_seen_at.isoformat() if latest_seen_at else None,
     }

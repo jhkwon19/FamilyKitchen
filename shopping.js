@@ -710,12 +710,13 @@ function renderProductSyncStatus() {
   const synced = Number(state.productSync.synced_count) || 0;
   const priced = Number(state.productSync.priced_count) || 0;
   const images = Number(state.productSync.image_count) || 0;
+  const discounts = Number(state.productSync.discount_count) || 0;
   const latest = state.productSync.latest_synced_at
     ? ` · 최근 갱신 ${new Date(state.productSync.latest_synced_at).toLocaleString('ko-KR')}`
     : '';
 
   productSyncStatus.textContent = total
-    ? `상품 DB 동기화 ${synced.toLocaleString('ko-KR')} / ${total.toLocaleString('ko-KR')} · 가격 ${priced.toLocaleString('ko-KR')} · 이미지 ${images.toLocaleString('ko-KR')}${latest}`
+    ? `상품 DB 동기화 ${synced.toLocaleString('ko-KR')} / ${total.toLocaleString('ko-KR')} · 가격 ${priced.toLocaleString('ko-KR')} · 할인 ${discounts.toLocaleString('ko-KR')} · 이미지 ${images.toLocaleString('ko-KR')}${latest}`
     : '상품 DB를 동기화하는 중입니다.';
 }
 
