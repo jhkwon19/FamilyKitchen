@@ -751,6 +751,35 @@ p {
   }
 }
 
+@media (min-width: 1320px) {
+  .toolbar {
+    grid-template-columns: minmax(220px, 0.95fr) minmax(280px, 340px) repeat(4, minmax(120px, 0.55fr));
+    align-items: stretch;
+    column-gap: 10px;
+    row-gap: 0;
+  }
+
+  .toolbar__workspace,
+  .toolbar__controls,
+  .toolbar__summary,
+  .summary__grid {
+    display: contents;
+  }
+
+  .toolbar__intro {
+    max-width: none;
+    align-self: center;
+  }
+
+  .toolbar__budget {
+    align-self: stretch;
+  }
+
+  .summary-card {
+    align-self: stretch;
+  }
+}
+
 @media (max-width: 1024px) {
   .toolbar {
     gap: 14px;
