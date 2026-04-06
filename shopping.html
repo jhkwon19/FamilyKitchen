@@ -187,6 +187,227 @@
     </article>
   </template>
 
-  <script src="/shopping.js?v=23"></script>
+  <script>
+    (function () {
+      var button = document.getElementById('categoryPickerBtn');
+      var panel = document.getElementById('categoryPickerPanel');
+      var backdrop = document.getElementById('categoryPickerBackdrop');
+      var list = document.getElementById('categoryPickerList');
+      var trail = document.getElementById('categoryPickerTrail');
+      var title = document.getElementById('categoryPickerPath');
+      var closeButton = document.getElementById('categoryPickerCloseBtn');
+      var clearButton = document.getElementById('categoryClearBtn');
+      var selectButton = document.getElementById('categorySelectCurrentBtn');
+      var tree = [];
+      var browsingPath = '';
+      var selectedPath = '';
+      var loading = false;
+
+      if (!button || !panel || !list || !trail || !title) return;
+
+      function setHidden(node, hidden) {
+        if (!node) return;
+        node.hidden = hidden;
+      }
+
+      function findNode(path) {
+        if (!path) return null;
+        var nodes = tree;
+        var found = null;
+        var parts = path.split('/');
+        for (var index = 0; index < parts.length; index += 1) {
+          var key = parts.slice(0, index + 1).join('/');
+          found = null;
+          for (var i = 0; i < nodes.length; i += 1) {
+            if (nodes[i].key === key) {
+              found = nodes[i];
+              break;
+            }
+          }
+          nodes = found && Array.isArray(found.children) ? found.children : [];
+        }
+        return found;
+      }
+
+      function labelFor(path) {
+        if (!path) return '';
+        var labels = [];
+        var nodes = tree;
+        var parts = path.split('/');
+        for (var index = 0; index < parts.length; index += 1) {
+          var key = parts.slice(0, index + 1).join('/');
+          var found = null;
+          for (var i = 0; i < nodes.length; i += 1) {
+            if (nodes[i].key === key) {
+              found = nodes[i];
+              break;
+            }
+          }
+          if (!found) break;
+          labels.push(found.label);
+          nodes = Array.isArray(found.children) ? found.children : [];
+        }
+        return labels.join(' > ');
+      }
+
+      function renderTrail() {
+        trail.innerHTML = '';
+        var root = document.createElement('button');
+        root.type = 'button';
+        root.textContent = '전체';
+        root.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          browsingPath = '';
+          renderPicker();
+        });
+        trail.appendChild(root);
+
+        if (!browsingPath) return;
+        var parts = browsingPath.split('/');
+        for (var index = 0; index < parts.length; index += 1) {
+          var key = parts.slice(0, index + 1).join('/');
+          var node = findNode(key);
+          if (!node) continue;
+          var item = document.createElement('button');
+          item.type = 'button';
+          item.textContent = node.label;
+          item.setAttribute('data-path', key);
+          item.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            browsingPath = event.currentTarget.getAttribute('data-path') || '';
+            renderPicker();
+          });
+          trail.appendChild(item);
+        }
+      }
+
+      function renderPicker() {
+        var current = findNode(browsingPath);
+        var children = current ? current.children || [] : tree;
+        title.textContent = labelFor(browsingPath) || '전체 카테고리';
+        if (selectButton) selectButton.disabled = !browsingPath;
+        renderTrail();
+
+        list.innerHTML = '';
+        if (loading) {
+          var loadingNode = document.createElement('p');
+          loadingNode.className = 'category-picker__empty';
+          loadingNode.textContent = '카테고리를 불러오는 중입니다.';
+          list.appendChild(loadingNode);
+          return;
+        }
+
+        if (!children.length) {
+          var empty = document.createElement('p');
+          empty.className = 'category-picker__empty';
+          empty.textContent = '더 이상 하위 메뉴가 없습니다.';
+          list.appendChild(empty);
+          return;
+        }
+
+        children.forEach(function (node) {
+          var hasChildren = Array.isArray(node.children) && node.children.length > 0;
+          var item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'category-picker__item';
+          item.setAttribute('data-path', node.key);
+          item.setAttribute('data-has-children', hasChildren ? '1' : '0');
+          item.innerHTML = '<span></span><em></em>';
+          item.querySelector('span').textContent = node.label;
+          item.querySelector('em').textContent = hasChildren ? '하위 메뉴 ›' : '선택';
+          item.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var path = event.currentTarget.getAttribute('data-path') || '';
+            if (event.currentTarget.getAttribute('data-has-children') === '1') {
+              browsingPath = path;
+              renderPicker();
+              return;
+            }
+            selectedPath = path;
+            button.textContent = labelFor(path) || '전체';
+            closePicker();
+            if (window.familyKitchenShopping && window.familyKitchenShopping.selectCategoryPath) {
+              window.familyKitchenShopping.selectCategoryPath(path);
+            }
+          });
+          list.appendChild(item);
+        });
+      }
+
+      function loadCategories() {
+        if (loading || tree.length) return;
+        loading = true;
+        renderPicker();
+        fetch('/api/shopping/categories')
+          .then(function (response) { return response.ok ? response.json() : { items: [] }; })
+          .then(function (payload) {
+            tree = Array.isArray(payload.items) ? payload.items : [];
+          })
+          .catch(function () {
+            tree = [];
+          })
+          .then(function () {
+            loading = false;
+            renderPicker();
+          });
+      }
+
+      function openPicker() {
+        browsingPath = selectedPath;
+        renderPicker();
+        setHidden(panel, false);
+        setHidden(backdrop, false);
+        button.setAttribute('aria-expanded', 'true');
+        loadCategories();
+      }
+
+      function closePicker() {
+        setHidden(panel, true);
+        setHidden(backdrop, true);
+        button.setAttribute('aria-expanded', 'false');
+      }
+
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        if (panel.hidden) {
+          openPicker();
+        } else {
+          closePicker();
+        }
+      }, true);
+
+      if (backdrop) backdrop.addEventListener('click', closePicker);
+      if (closeButton) closeButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        closePicker();
+      });
+      if (clearButton) clearButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        selectedPath = '';
+        browsingPath = '';
+        button.textContent = '전체';
+        closePicker();
+        if (window.familyKitchenShopping && window.familyKitchenShopping.selectCategoryPath) {
+          window.familyKitchenShopping.selectCategoryPath('');
+        }
+      });
+      if (selectButton) selectButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (!browsingPath) return;
+        selectedPath = browsingPath;
+        button.textContent = labelFor(selectedPath) || '전체';
+        closePicker();
+        if (window.familyKitchenShopping && window.familyKitchenShopping.selectCategoryPath) {
+          window.familyKitchenShopping.selectCategoryPath(selectedPath);
+        }
+      });
+    }());
+  </script>
+  <script src="/shopping.js?v=24"></script>
 </body>
 </html>

@@ -1125,3 +1125,9 @@ async function request(url, options = {}) {
     }
   }
 }
+
+window.familyKitchenShopping = {
+  selectCategoryPath,
+  openCategoryPicker: toggleCategoryPicker,
+  closeCategoryPicker,
+};
