@@ -33,20 +33,19 @@ const cartItemTemplate = document.getElementById('cartItemTemplate');
 const CART_STORAGE_KEY = 'shopping-cart-v1';
 const BUDGET_STORAGE_KEY = 'shopping-budget-v1';
 const REQUEST_TIMEOUT_MS = 12000;
-const PLACEHOLDER_IMAGE = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
-    <defs>
-      <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#efe2d2"/>
-        <stop offset="1" stop-color="#e2eadc"/>
-      </linearGradient>
-    </defs>
-    <rect width="320" height="240" rx="28" fill="url(#bg)"/>
-    <circle cx="114" cy="98" r="30" fill="#d2b896"/>
-    <path d="M62 184l62-62 39 39 27-27 68 50H62z" fill="#b8a56f" opacity="0.86"/>
-    <text x="160" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#8a6044">이미지 준비중</text>
-  </svg>
-)}`;
+const PLACEHOLDER_SVG = [
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">',
+  '<defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">',
+  '<stop offset="0" stop-color="#efe2d2"/>',
+  '<stop offset="1" stop-color="#e2eadc"/>',
+  '</linearGradient></defs>',
+  '<rect width="320" height="240" rx="28" fill="url(#bg)"/>',
+  '<circle cx="114" cy="98" r="30" fill="#d2b896"/>',
+  '<path d="M62 184l62-62 39 39 27-27 68 50H62z" fill="#b8a56f" opacity="0.86"/>',
+  '<text x="160" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#8a6044">이미지 준비중</text>',
+  '</svg>',
+].join('');
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(PLACEHOLDER_SVG);
 
 const state = {
   results: [],
