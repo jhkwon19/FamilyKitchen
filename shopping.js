@@ -24,7 +24,6 @@ const manualItemQty = document.getElementById('manualItemQty');
 const manualItemPrice = document.getElementById('manualItemPrice');
 const searchResults = document.getElementById('searchResults');
 const cartList = document.getElementById('cartList');
-const cartMeta = document.getElementById('cartMeta');
 const estimatedTotal = document.getElementById('estimatedTotal');
 const pickedTotal = document.getElementById('pickedTotal');
 const checkModeEstimatedTotal = document.querySelector('[data-check-estimated-total]');
@@ -883,11 +882,6 @@ function renderCart() {
   if (!cartList) return;
 
   cartList.innerHTML = '';
-  if (cartMeta) {
-    cartMeta.textContent = state.currentListTitle
-      ? `${state.currentListTitle} · ${state.cart.length}개 담김`
-      : `${state.cart.length}개 담김`;
-  }
 
   if (!state.cart.length) {
     cartList.appendChild(

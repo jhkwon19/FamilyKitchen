@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/shopping.css?v=44">
+  <link rel="stylesheet" href="/shopping.css?v=45">
 </head>
 <body>
   <main class="shopping-shell">
@@ -21,29 +21,6 @@
         <p class="eyebrow">공식몰 연동 장보기</p>
         <h1>코스트코 장보기</h1>
         <p class="lede">장보기 페이지 안에서 코스트코 공식몰 검색 결과를 바로 불러오고, 예상 금액과 구매 진행 상황을 함께 관리합니다.</p>
-      </div>
-    </section>
-
-    <section class="toolbar" aria-label="장보기 준비">
-      <div class="toolbar__intro">
-        <div class="toolbar__intro-copy">
-          <p class="eyebrow">예산과 검색 설정</p>
-          <h2>장보기 준비</h2>
-        </div>
-      </div>
-      <div class="toolbar__workspace">
-        <div class="toolbar__summary" aria-label="장보기 요약">
-          <div class="summary__grid">
-            <article class="summary-card">
-              <span class="summary-card__label">장보기에 담은 총 금액</span>
-              <strong id="estimatedTotal">0원</strong>
-            </article>
-            <article class="summary-card">
-              <span class="summary-card__label">카트에 담은 금액</span>
-              <strong id="pickedTotal">0원</strong>
-            </article>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -83,7 +60,16 @@
             <h2>장보기 리스트</h2>
           </div>
           <div class="cart-panel__status">
-            <p id="cartMeta" class="panel__hint">0개 담김</p>
+            <div class="cart-summary-inline" aria-label="장보기 금액 요약">
+              <article>
+                <span>장보기에 담은 총 금액</span>
+                <strong id="estimatedTotal">0원</strong>
+              </article>
+              <article>
+                <span>카트에 담은 금액</span>
+                <strong id="pickedTotal">0원</strong>
+              </article>
+            </div>
             <button id="checkModeBtn" class="btn btn-ghost toolbar__mini-btn" type="button" aria-pressed="false">체크 모드</button>
           </div>
         </div>
@@ -198,6 +184,6 @@
     </article>
   </template>
 
-  <script src="/shopping.js?v=42"></script>
+  <script src="/shopping.js?v=43"></script>
 </body>
 </html>
