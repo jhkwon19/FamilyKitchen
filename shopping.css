@@ -312,7 +312,7 @@ p {
 
 .toolbar__history-fields {
   display: grid;
-  grid-template-columns: minmax(78px, 92px) minmax(0, 1fr) auto auto;
+  grid-template-columns: repeat(2, auto);
   gap: 8px;
   align-items: end;
 }
@@ -812,7 +812,7 @@ p {
 
 .cart-panel__controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: end;
   gap: 8px;
   margin-bottom: 12px;
@@ -824,7 +824,7 @@ p {
 
 .manual-item-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px 86px auto;
+  grid-template-columns: minmax(220px, 1fr) 56px 86px auto;
   gap: 8px;
   align-items: end;
   min-width: 0;
@@ -1388,7 +1388,7 @@ p {
   }
 
   .panel--cart .toolbar__history-fields {
-    grid-template-columns: minmax(78px, 92px) minmax(0, 1fr) auto auto;
+    grid-template-columns: repeat(2, auto);
   }
 }
 

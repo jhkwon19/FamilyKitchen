@@ -493,8 +493,8 @@ function populateHistoryMonthOptions() {
 }
 
 async function loadSavedListsForSelectedMonth({ autoLoad = false, preferredListId = null, clearWhenEmpty = false } = {}) {
-  const selected = getSelectedHistoryMonth();
-  if (!selected || !shoppingListSelect) return;
+  const selected = getSelectedHistoryMonth() || getCurrentYearMonth();
+  if (!selected) return;
 
   try {
     const params = new URLSearchParams({
@@ -505,6 +505,30 @@ async function loadSavedListsForSelectedMonth({ autoLoad = false, preferredListI
     state.savedLists = Array.isArray(lists) ? lists : [];
   } catch (error) {
     state.savedLists = [];
+  }
+
+  if (!shoppingListSelect) {
+    if (!state.savedLists.length) {
+      if (clearWhenEmpty) {
+        clearActiveShoppingList();
+      }
+      updateListControlState();
+      return;
+    }
+
+    const preferredExists = preferredListId && state.savedLists.some(item => item.id === preferredListId);
+    const currentExists = state.currentListId && state.savedLists.some(item => item.id === state.currentListId);
+    const listId = preferredExists
+      ? preferredListId
+      : currentExists
+        ? state.currentListId
+        : state.savedLists[0].id;
+    updateListControlState();
+    if (autoLoad && listId) {
+      const payload = await requestJson(`/api/shopping/lists/${listId}`);
+      applyShoppingList(payload);
+    }
+    return;
   }
 
   shoppingListSelect.innerHTML = '';
@@ -861,7 +885,7 @@ function renderCart() {
       buildEmptyState(
         state.currentListId
           ? '선택한 장보기 리스트가 비어 있습니다. 검색 결과에서 몇 개 담아보세요.'
-          : '검색 결과에서 상품을 담은 뒤 현재 리스트 저장 버튼으로 DB에 저장하세요.'
+          : '검색 결과에서 상품을 담은 뒤 리스트 저장 버튼으로 DB에 저장하세요.'
       )
     );
     return;
@@ -1056,10 +1080,10 @@ async function replaceCurrentShoppingListItems() {
 
 function updateListControlState() {
   if (saveListBtn) {
-    saveListBtn.textContent = '저장';
+    saveListBtn.textContent = '리스트 저장';
   }
   if (deleteListBtn) {
-    deleteListBtn.disabled = !shoppingListSelect || !shoppingListSelect.value;
+    deleteListBtn.disabled = shoppingListSelect ? !shoppingListSelect.value : !state.currentListId;
   }
 }
 
