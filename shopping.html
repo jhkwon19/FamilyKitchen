@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/shopping.css?v=29">
+  <link rel="stylesheet" href="/shopping.css?v=30">
 </head>
 <body>
   <main class="shopping-shell">
@@ -33,14 +33,6 @@
         <button id="resetCartBtn" class="btn btn-ghost toolbar__reset" type="button">체크리스트 초기화</button>
       </div>
       <div class="toolbar__workspace">
-        <div class="toolbar__controls" aria-label="예산 설정">
-          <div class="toolbar__budget">
-            <label class="field field--budget">
-              <span>이번 장보기 예산</span>
-              <input id="budgetInput" type="number" min="0" step="1000" placeholder="예: 250000">
-            </label>
-          </div>
-        </div>
         <div class="toolbar__summary" aria-label="장보기 요약">
           <div class="summary__grid">
             <article class="summary-card">
@@ -54,10 +46,6 @@
             <article class="summary-card">
               <span class="summary-card__label">남은 예정 금액</span>
               <strong id="remainingTotal">0원</strong>
-            </article>
-            <article class="summary-card">
-              <span class="summary-card__label">예산 대비</span>
-              <strong id="budgetDelta">예산 미입력</strong>
             </article>
           </div>
         </div>
@@ -187,6 +175,6 @@
     </article>
   </template>
 
-  <script src="/shopping.js?v=30"></script>
+  <script src="/shopping.js?v=31"></script>
 </body>
 </html>

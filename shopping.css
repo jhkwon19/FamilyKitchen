@@ -243,7 +243,7 @@ p {
 
 .toolbar__workspace {
   display: grid;
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   align-items: stretch;
 }
@@ -273,14 +273,6 @@ p {
   color: #41291f;
 }
 
-.toolbar__controls {
-  display: grid;
-  grid-template-columns: minmax(180px, 210px);
-  height: 100%;
-  justify-self: end;
-  width: 100%;
-}
-
 .toolbar__history {
   display: flex;
   flex-direction: column;
@@ -301,19 +293,6 @@ p {
   align-items: end;
 }
 
-.toolbar__budget {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  padding: 5px 4px;
-  border-radius: 0;
-  background: transparent;
-  border: 0;
-  min-height: 38px;
-  box-shadow: none;
-}
-
 .field--search {
   max-width: 280px;
 }
@@ -328,10 +307,6 @@ p {
 
 .field--list {
   max-width: none;
-}
-
-.field--budget {
-  max-width: 210px;
 }
 
 .results-toolbar {
@@ -613,14 +588,6 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-.toolbar__controls .btn {
-  width: 100%;
-  min-width: 0;
-  min-height: 40px;
-  white-space: nowrap;
-  align-self: stretch;
 }
 
 .toolbar__reset {
@@ -1091,7 +1058,7 @@ p {
 
 @media (min-width: 1025px) {
   .toolbar {
-    grid-template-columns: minmax(240px, 1fr) minmax(180px, 210px) repeat(4, minmax(98px, 124px));
+    grid-template-columns: minmax(240px, 1fr) repeat(3, minmax(118px, 150px));
     align-items: stretch;
     justify-content: end;
     column-gap: 8px;
@@ -1099,7 +1066,6 @@ p {
   }
 
   .toolbar__workspace,
-  .toolbar__controls,
   .toolbar__summary,
   .summary__grid {
     display: contents;
@@ -1111,7 +1077,6 @@ p {
   }
 
   .toolbar__history,
-  .toolbar__budget,
   .summary-card {
     align-self: stretch;
   }
@@ -1128,11 +1093,6 @@ p {
 
   .toolbar__workspace {
     grid-template-columns: 1fr;
-  }
-
-  .toolbar__controls {
-    grid-template-columns: 1fr;
-    justify-self: stretch;
   }
 
   .toolbar__history-fields {
@@ -1230,7 +1190,6 @@ p {
     padding: 16px 16px 18px 22px;
   }
 
-  .toolbar__budget,
   .results-toolbar {
     grid-template-columns: 1fr;
   }
@@ -1244,7 +1203,6 @@ p {
     max-height: calc(100vh - 32px);
   }
 
-  .toolbar__controls,
   .toolbar__summary,
   .toolbar__intro {
     padding: 0;
@@ -1253,12 +1211,6 @@ p {
     border-radius: 0;
     min-height: 0;
     box-shadow: none;
-  }
-
-  .toolbar__controls .btn {
-    width: 100%;
-    min-width: 0;
-    align-self: stretch;
   }
 
   .toolbar__history-fields {

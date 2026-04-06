@@ -12,7 +12,6 @@ const categoryPickerCloseBtn = document.getElementById('categoryPickerCloseBtn')
 const categoryClearBtn = document.getElementById('categoryClearBtn');
 const loadMoreResultsBtn = document.getElementById('loadMoreResultsBtn');
 const productSyncStatus = document.getElementById('productSyncStatus');
-const budgetInput = document.getElementById('budgetInput');
 const resetCartBtn = document.getElementById('resetCartBtn');
 const historyMonthSelect = document.getElementById('historyMonthSelect');
 const shoppingListSelect = document.getElementById('shoppingListSelect');
@@ -25,7 +24,6 @@ const cartMeta = document.getElementById('cartMeta');
 const estimatedTotal = document.getElementById('estimatedTotal');
 const pickedTotal = document.getElementById('pickedTotal');
 const remainingTotal = document.getElementById('remainingTotal');
-const budgetDelta = document.getElementById('budgetDelta');
 
 const resultCardTemplate = document.getElementById('resultCardTemplate');
 const cartItemTemplate = document.getElementById('cartItemTemplate');
@@ -74,10 +72,6 @@ const state = {
   categoryCloseTimer: null,
   categoryBrowseTimer: null,
 };
-
-if (budgetInput) {
-  budgetInput.value = state.budget ? String(state.budget) : '';
-}
 
 bindEvents();
 boot().catch(error => {
@@ -181,14 +175,6 @@ function bindEvents() {
     if (!categoryPickerPanel || categoryPickerPanel.hidden) return;
     positionCategoryPicker();
   }, true);
-
-  if (budgetInput) {
-    budgetInput.addEventListener('input', () => {
-      state.budget = Number(budgetInput.value) || 0;
-      saveBudget();
-      renderSummary();
-    });
-  }
 
   if (resetCartBtn) {
     resetCartBtn.addEventListener('click', () => {
@@ -625,7 +611,6 @@ async function deleteSelectedShoppingList() {
     state.currentListMonth = null;
     state.cart = [];
     state.budget = 0;
-    if (budgetInput) budgetInput.value = '';
     saveCart();
     saveBudget();
   }
@@ -642,10 +627,6 @@ function applyShoppingList(payload) {
   state.budget = Number(payload.budget) || 0;
   state.cart = Array.isArray(payload.items) ? payload.items.map(deserializeShoppingItem) : [];
 
-  if (budgetInput) {
-    budgetInput.value = state.budget ? String(state.budget) : '';
-  }
-
   saveBudget();
   saveCart();
   render();
@@ -658,9 +639,6 @@ function clearActiveShoppingList() {
   state.currentListMonth = null;
   state.cart = [];
   state.budget = 0;
-  if (budgetInput) {
-    budgetInput.value = '';
-  }
   saveBudget();
   saveCart();
   render();
@@ -942,18 +920,6 @@ function renderSummary() {
   estimatedTotal.textContent = formatWon(estimated);
   pickedTotal.textContent = formatWon(picked);
   remainingTotal.textContent = formatWon(remaining);
-
-  if (!state.budget) {
-    budgetDelta.textContent = '예산 미입력';
-    budgetDelta.style.color = '';
-    return;
-  }
-
-  const delta = state.budget - estimated;
-  budgetDelta.textContent = delta >= 0
-    ? `${formatWon(delta)} 남음`
-    : `${formatWon(Math.abs(delta))} 초과`;
-  budgetDelta.style.color = delta >= 0 ? 'var(--accent)' : '#b23a2b';
 }
 
 async function addToCart(item) {
