@@ -74,7 +74,12 @@ if (budgetInput) {
 }
 
 bindEvents();
-boot();
+boot().catch(error => {
+  console.error(error);
+  if (catalogStatus) {
+    catalogStatus.textContent = '장보기 화면 초기화 중 오류가 발생했습니다. 새로고침 후 다시 시도해보세요.';
+  }
+});
 
 async function boot() {
   render();
@@ -141,10 +146,10 @@ function bindEvents() {
   }
 
   document.addEventListener('click', event => {
-    if (categoryPickerPanel?.hidden) return;
+    if (!categoryPickerPanel || categoryPickerPanel.hidden) return;
     if (
       !categoryPickerPanel.contains(event.target)
-      && !categoryPickerBtn?.contains(event.target)
+      && (!categoryPickerBtn || !categoryPickerBtn.contains(event.target))
     ) {
       closeCategoryPicker();
     }
@@ -456,7 +461,7 @@ async function loadSavedListsForSelectedMonth({ autoLoad = false, preferredListI
 }
 
 async function loadSelectedShoppingList() {
-  const listId = shoppingListSelect?.value;
+  const listId = shoppingListSelect ? shoppingListSelect.value : '';
   if (!listId) return;
 
   const payload = await requestJson(`/api/shopping/lists/${listId}`);
@@ -507,11 +512,11 @@ async function createShoppingListFromCurrentState() {
 }
 
 async function deleteSelectedShoppingList() {
-  const listId = shoppingListSelect?.value || state.currentListId;
+  const listId = (shoppingListSelect ? shoppingListSelect.value : '') || state.currentListId;
   if (!listId) return;
 
   const selected = state.savedLists.find(item => item.id === listId);
-  const label = selected?.title || state.currentListTitle || '선택한 리스트';
+  const label = (selected && selected.title) || state.currentListTitle || '선택한 리스트';
   if (!window.confirm(`'${label}' 리스트를 삭제할까요?`)) return;
 
   await request(`/api/shopping/lists/${listId}`, { method: 'DELETE' });
@@ -571,7 +576,7 @@ function render() {
 }
 
 async function loadSearchResults(refresh = false) {
-  const query = searchInput?.value || '';
+  const query = searchInput ? searchInput.value : '';
   const category = state.selectedCategoryPath || '';
   const requestId = ++state.searchRequestId;
   if (catalogStatus) {
@@ -613,7 +618,7 @@ async function loadSearchResults(refresh = false) {
 
 function renderResults() {
   if (!searchResults) return;
-  const query = searchInput?.value?.trim() || '';
+  const query = searchInput && searchInput.value ? searchInput.value.trim() : '';
   const categoryLabel = getSelectedCategoryLabel();
   const results = state.results;
 
@@ -866,7 +871,7 @@ function updateListControlState() {
 }
 
 function getSelectedHistoryMonth() {
-  if (!historyMonthSelect?.value) return null;
+  if (!historyMonthSelect || !historyMonthSelect.value) return null;
   const [yearText, monthText] = historyMonthSelect.value.split('-');
   const year = Number(yearText);
   const month = Number(monthText);
@@ -1019,10 +1024,10 @@ function findCategoryNode(path) {
   let nodes = state.categoryTree;
   let found = null;
   path.split('/').forEach((part, index, parts) => {
-    if (!nodes?.length) return;
+    if (!Array.isArray(nodes) || !nodes.length) return;
     const key = parts.slice(0, index + 1).join('/');
     found = nodes.find(item => item.key === key) || null;
-    nodes = found?.children || [];
+    nodes = found && Array.isArray(found.children) ? found.children : [];
   });
   return found;
 }
