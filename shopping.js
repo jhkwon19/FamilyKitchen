@@ -32,6 +32,7 @@ const cartItemTemplate = document.getElementById('cartItemTemplate');
 
 const CART_STORAGE_KEY = 'shopping-cart-v1';
 const BUDGET_STORAGE_KEY = 'shopping-budget-v1';
+const REQUEST_TIMEOUT_MS = 12000;
 const PLACEHOLDER_IMAGE = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
     <defs>
@@ -967,7 +968,7 @@ function loadCart() {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
+  } catch (error) {
     return [];
   }
 }
@@ -1061,16 +1062,54 @@ function formatDateTimeWithSeconds(value) {
 }
 
 async function requestJson(url, options = {}) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+  const timeoutMs = options.timeoutMs || REQUEST_TIMEOUT_MS;
+  const requestOptions = Object.assign({}, options);
+  delete requestOptions.timeoutMs;
+
+  let timeoutId = null;
+  if (typeof AbortController !== 'undefined' && !requestOptions.signal) {
+    const controller = new AbortController();
+    requestOptions.signal = controller.signal;
+    timeoutId = window.setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
   }
-  return response.json();
+
+  try {
+    const response = await fetch(url, requestOptions);
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+    return response.json();
+  } finally {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
+  }
 }
 
 async function request(url, options = {}) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+  const timeoutMs = options.timeoutMs || REQUEST_TIMEOUT_MS;
+  const requestOptions = Object.assign({}, options);
+  delete requestOptions.timeoutMs;
+
+  let timeoutId = null;
+  if (typeof AbortController !== 'undefined' && !requestOptions.signal) {
+    const controller = new AbortController();
+    requestOptions.signal = controller.signal;
+    timeoutId = window.setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
+  }
+
+  try {
+    const response = await fetch(url, requestOptions);
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+  } finally {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
   }
 }

@@ -1663,6 +1663,29 @@ def _build_costco_category_tree(entries: List[dict]) -> List[dict]:
     return serialize(root_nodes)
 
 
+def _build_costco_category_tree_from_db(db: Session) -> Tuple[List[dict], int]:
+    entries = []
+    rows = (
+        db.query(CostcoProduct.product_url, CostcoProduct.category_path, CostcoProduct.category_text)
+        .filter(CostcoProduct.is_active.is_(True))
+        .all()
+    )
+
+    for product_url, category_path, category_text in rows:
+        path = (category_path or _costco_url_to_category_path(product_url or "")).strip("/")
+        if not path:
+            continue
+        entries.append(
+            {
+                "url": product_url or "",
+                "category_path": path,
+                "category_text": category_text or "",
+            }
+        )
+
+    return _build_costco_category_tree(entries), len(rows)
+
+
 def _extract_costco_homepage_items(html: str) -> List[dict]:
     soup = BeautifulSoup(html, "html.parser")
     items = []
@@ -2139,7 +2162,14 @@ def _search_costco_products_db(db: Session, query: str, limit: int, category: st
     active_query = db.query(CostcoProduct).filter(CostcoProduct.is_active.is_(True))
     total_count = active_query.count()
     if total_count == 0:
-        return None
+        return {
+            "items": [],
+            "matched_count": 0,
+            "total_catalog_count": 0,
+            "fetched_at": None,
+            "mode": "db-cache-empty",
+            "message": "코스트코 상품 DB를 동기화하는 중입니다. 잠시 후 다시 시도해보세요.",
+        }
 
     filtered = active_query
     category_path = category.strip().strip("/")
@@ -2164,8 +2194,6 @@ def _search_costco_products_db(db: Session, query: str, limit: int, category: st
         )
 
     matched_count = filtered.count()
-    if matched_count == 0 and (query.strip() or category_path):
-        return None
     products = (
         filtered.order_by(
             CostcoProduct.last_synced_at.desc(),
@@ -2181,7 +2209,9 @@ def _search_costco_products_db(db: Session, query: str, limit: int, category: st
         "total_catalog_count": total_count,
         "fetched_at": None,
         "mode": "db-cache",
-        "message": "저장된 코스트코 상품 DB에서 검색했습니다.",
+        "message": "저장된 코스트코 상품 DB에서 검색했습니다."
+        if matched_count
+        else "저장된 코스트코 상품 DB에서 일치하는 상품이 없습니다.",
     }
 
 
@@ -2345,28 +2375,42 @@ async def shopping_catalog(refresh: bool = False):
 
 
 @app.get("/api/shopping/categories")
-async def shopping_categories(refresh: bool = False):
+async def shopping_categories(refresh: bool = False, db: Session = Depends(get_db)):
     try:
+        if not refresh:
+            items, count = _build_costco_category_tree_from_db(db)
+            return {
+                "items": items,
+                "count": count,
+                "fetched_at": None,
+                "mode": "db-cache" if count else "db-cache-empty",
+            }
+
         entries = await _load_costco_shopping_sitemap(force_refresh=refresh)
         fetched_at = COSTCO_SHOPPING_SITEMAP_CACHE["fetched_at"]
         return {
             "items": _build_costco_category_tree(entries),
             "count": len(entries),
             "fetched_at": fetched_at.isoformat() if fetched_at else None,
+            "mode": "sitemap",
         }
     except Exception:
         return {
             "items": [],
             "count": 0,
             "fetched_at": None,
+            "mode": "error",
         }
 
 
 async def _sync_costco_products_sitemap_db(db: Session, refresh: bool = False) -> dict:
     entries = await _load_costco_shopping_sitemap(force_refresh=refresh)
     seen_at = datetime.now(timezone.utc)
-    for entry in entries:
+    for index, entry in enumerate(entries, start=1):
         _upsert_costco_product_from_entry(db, entry, seen_at)
+        if index % 500 == 0:
+            db.commit()
+            await asyncio.sleep(0)
     db.commit()
     return {
         "total": len(entries),
@@ -2377,22 +2421,25 @@ async def _sync_costco_products_sitemap_db(db: Session, refresh: bool = False) -
 async def _sync_costco_products_details_db(db: Session, limit: int = 20, refresh: bool = False) -> dict:
     safe_limit = max(1, min(limit, 100))
     products = (
-        db.query(CostcoProduct)
+        db.query(CostcoProduct.id, CostcoProduct.product_url)
         .filter(CostcoProduct.is_active.is_(True))
         .order_by(CostcoProduct.last_synced_at.asc(), CostcoProduct.updated_at.asc())
         .limit(safe_limit)
         .all()
     )
+    db.commit()
     synced_at = datetime.now(timezone.utc)
     synced = 0
     failed = 0
-    for product in products:
-        item = await _load_costco_product_details(product.product_url, force_refresh=refresh)
+    for product_id, product_url in products:
+        item = await _load_costco_product_details(product_url, force_refresh=refresh)
         if not item:
             failed += 1
             continue
         _upsert_costco_product_from_item(db, item, synced_at)
         synced += 1
+        if synced % 10 == 0:
+            db.commit()
         await asyncio.sleep(0.15)
     db.commit()
     return {
