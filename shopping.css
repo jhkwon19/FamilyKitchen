@@ -1727,7 +1727,15 @@ p {
   }
 
   .cart-item__fields {
-    gap: 5px;
+    grid-template-columns: 68px 104px;
+    gap: 5px 6px;
+  }
+
+  .cart-item__meta {
+    grid-column: 1 / -1;
+    justify-self: end;
+    align-self: start;
+    padding-bottom: 0;
   }
 
   .cart-item__fields .mini-field {
@@ -1737,11 +1745,6 @@ p {
   .cart-item__fields .mini-field input {
     padding: 6px 8px;
     font-size: 12px;
-  }
-
-  .cart-item__meta {
-    flex-direction: row;
-    align-items: center;
   }
 
   .field input,
@@ -1760,8 +1763,7 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .product-card__actions,
-  .cart-item__meta {
+  .product-card__actions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1786,10 +1788,12 @@ p {
   }
 
   .cart-item__fields {
-    grid-template-columns: 68px minmax(88px, 104px) minmax(0, 1fr);
+    grid-template-columns: 68px minmax(88px, 104px);
   }
 
   .cart-item__meta {
+    flex-direction: row;
+    align-items: center;
     font-size: 10px;
   }
 
