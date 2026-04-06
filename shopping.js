@@ -1056,7 +1056,7 @@ async function replaceCurrentShoppingListItems() {
 
 function updateListControlState() {
   if (saveListBtn) {
-    saveListBtn.textContent = state.currentListId ? '변경 저장' : '현재 리스트 저장';
+    saveListBtn.textContent = '저장';
   }
   if (deleteListBtn) {
     deleteListBtn.disabled = !shoppingListSelect || !shoppingListSelect.value;

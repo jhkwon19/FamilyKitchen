@@ -852,7 +852,8 @@ p {
 
 .cart-panel__controls .toolbar__mini-btn {
   min-height: 34px;
-  padding: 8px 10px;
+  min-width: 44px;
+  padding: 8px 9px;
   border-radius: 10px;
   font-size: 12px;
 }
