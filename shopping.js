@@ -11,6 +11,7 @@ const categoryPickerList = document.getElementById('categoryPickerList');
 const categoryPickerCloseBtn = document.getElementById('categoryPickerCloseBtn');
 const categoryClearBtn = document.getElementById('categoryClearBtn');
 const refreshCatalogBtn = document.getElementById('refreshCatalogBtn');
+const loadMoreResultsBtn = document.getElementById('loadMoreResultsBtn');
 const budgetInput = document.getElementById('budgetInput');
 const resetCartBtn = document.getElementById('resetCartBtn');
 const historyMonthSelect = document.getElementById('historyMonthSelect');
@@ -32,6 +33,7 @@ const cartItemTemplate = document.getElementById('cartItemTemplate');
 const CART_STORAGE_KEY = 'shopping-cart-v1';
 const BUDGET_STORAGE_KEY = 'shopping-budget-v1';
 const REQUEST_TIMEOUT_MS = 12000;
+const SEARCH_RESULT_PAGE_SIZE = 120;
 const PLACEHOLDER_SVG = [
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">',
   '<defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">',
@@ -54,6 +56,8 @@ const state = {
   matchedCount: 0,
   totalCatalogCount: 0,
   mode: 'featured',
+  hasMoreResults: false,
+  resultQueryKey: '',
   historyMonths: [],
   savedLists: [],
   currentListId: null,
@@ -105,6 +109,14 @@ function bindEvents() {
       refreshCatalogBtn.disabled = true;
       await loadSearchResults(true);
       refreshCatalogBtn.disabled = false;
+    });
+  }
+
+  if (loadMoreResultsBtn) {
+    loadMoreResultsBtn.addEventListener('click', async () => {
+      loadMoreResultsBtn.disabled = true;
+      await loadSearchResults(false, true);
+      loadMoreResultsBtn.disabled = false;
     });
   }
 
@@ -441,7 +453,7 @@ function positionCategoryPicker() {
   const rect = categoryPickerBtn.getBoundingClientRect();
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  const width = Math.min(780, Math.max(320, viewportWidth - 32));
+  const width = Math.min(680, Math.max(300, viewportWidth - 32));
   const left = Math.max(16, Math.min(rect.left, viewportWidth - width - 16));
   const top = Math.max(12, Math.min(rect.bottom + 8, viewportHeight - 120));
 
@@ -666,29 +678,39 @@ function render() {
   updateListControlState();
 }
 
-async function loadSearchResults(refresh = false) {
+async function loadSearchResults(refresh = false, append = false) {
   const query = searchInput ? searchInput.value : '';
   const category = state.selectedCategoryPath || '';
   const requestId = ++state.searchRequestId;
+  const queryKey = `${query.trim()}::${category}`;
+  const offset = append && state.resultQueryKey === queryKey ? state.results.length : 0;
   if (catalogStatus) {
     catalogStatus.textContent = refresh
       ? '공식몰 검색 결과를 다시 불러오는 중입니다.'
+      : append
+        ? '검색 결과를 더 불러오는 중입니다.'
       : '공식몰 검색 결과를 불러오는 중입니다.';
   }
 
   try {
     const params = new URLSearchParams({
       q: query,
-      limit: '12',
+      limit: String(SEARCH_RESULT_PAGE_SIZE),
+      offset: String(offset),
     });
     if (category) params.set('category', category);
     if (refresh) params.set('refresh', 'true');
     const payload = await requestJson(`/api/shopping/search?${params.toString()}`);
     if (requestId !== state.searchRequestId) return;
-    state.results = Array.isArray(payload.items) ? payload.items : [];
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    state.results = append && state.resultQueryKey === queryKey
+      ? state.results.concat(items)
+      : items;
+    state.resultQueryKey = queryKey;
     state.fetchedAt = payload.fetched_at;
     state.totalCatalogCount = Number(payload.total_catalog_count) || 0;
     state.matchedCount = Number(payload.matched_count) || 0;
+    state.hasMoreResults = state.results.length < state.matchedCount;
     state.mode = payload.mode || 'search';
     if (catalogStatus) {
       catalogStatus.textContent = payload.message || '공식몰 검색 결과를 불러왔습니다.';
@@ -698,6 +720,7 @@ async function loadSearchResults(refresh = false) {
     state.results = [];
     state.totalCatalogCount = 0;
     state.matchedCount = 0;
+    state.hasMoreResults = false;
     state.mode = 'error';
     if (catalogStatus) {
       catalogStatus.textContent = '공식몰 검색 결과를 불러오지 못했습니다.';
@@ -729,6 +752,9 @@ function renderResults() {
   }
 
   searchResults.innerHTML = '';
+  if (loadMoreResultsBtn) {
+    loadMoreResultsBtn.hidden = true;
+  }
   if (!results.length) {
     searchResults.appendChild(buildEmptyState(query || categoryLabel ? '검색 결과가 없습니다. 다른 하위 카테고리나 키워드도 시도해보세요.' : '기본 노출 상품이 없습니다.'));
     return;
@@ -794,6 +820,14 @@ function renderResults() {
     });
     searchResults.appendChild(fragment);
   });
+
+  if (loadMoreResultsBtn) {
+    const remaining = Math.max(state.matchedCount - results.length, 0);
+    loadMoreResultsBtn.hidden = !state.hasMoreResults;
+    loadMoreResultsBtn.textContent = remaining
+      ? `더 보기 (${remaining.toLocaleString('ko-KR')}개 남음)`
+      : '더 보기';
+  }
 }
 
 function renderCart() {

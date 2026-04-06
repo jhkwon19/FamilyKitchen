@@ -2179,7 +2179,7 @@ def _upsert_costco_product_from_item(db: Session, item: dict, synced_at: datetim
     return product
 
 
-def _search_costco_products_db(db: Session, query: str, limit: int, category: str) -> Optional[dict]:
+def _search_costco_products_db(db: Session, query: str, limit: int, category: str, offset: int = 0) -> Optional[dict]:
     active_query = db.query(CostcoProduct).filter(CostcoProduct.is_active.is_(True))
     total_count = active_query.count()
     if total_count == 0:
@@ -2231,6 +2231,7 @@ def _search_costco_products_db(db: Session, query: str, limit: int, category: st
             CostcoProduct.updated_at.desc(),
             CostcoProduct.product_name.asc(),
         )
+        .offset(offset)
         .limit(limit)
         .all()
     )
@@ -2598,15 +2599,17 @@ async def sync_costco_products_details(limit: int = 20, refresh: bool = False, d
 @app.get("/api/shopping/search")
 async def shopping_search(
     q: str = "",
-    limit: int = 12,
+    limit: int = 120,
+    offset: int = 0,
     refresh: bool = False,
     category: str = "",
     db: Session = Depends(get_db),
 ):
-    safe_limit = max(1, min(limit, 24))
+    safe_limit = max(1, min(limit, 200))
+    safe_offset = max(0, offset)
     try:
         if not refresh:
-            db_payload = _search_costco_products_db(db, q, safe_limit, category.strip())
+            db_payload = _search_costco_products_db(db, q, safe_limit, category.strip(), safe_offset)
             if db_payload is not None:
                 return {
                     "items": db_payload["items"],
