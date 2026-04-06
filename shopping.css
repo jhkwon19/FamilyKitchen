@@ -1141,35 +1141,23 @@ p {
 
   .layout {
     gap: 4px;
-    align-items: stretch;
-    min-height: 0;
+    align-items: start;
     padding-bottom: 10px;
     overflow: hidden;
   }
 
-  .panel {
-    height: 100%;
-    min-height: 0;
-  }
-
   .panel--search {
-    display: grid;
-    grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
-    max-height: 100%;
     overflow: hidden;
   }
 
   .panel--cart {
     position: static;
-    display: grid;
-    grid-template-rows: auto auto auto minmax(0, 1fr);
-    max-height: 100%;
     overflow: hidden;
   }
 
   .product-grid,
   .cart-list {
-    min-height: 0;
+    max-height: calc(100vh - 335px);
     overflow: auto;
     padding-right: 4px;
   }
