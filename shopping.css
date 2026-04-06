@@ -1049,7 +1049,7 @@ p {
 
 @media (min-width: 1025px) {
   .toolbar {
-    grid-template-columns: minmax(240px, 1fr) minmax(118px, 150px);
+    grid-template-columns: minmax(240px, 1fr) repeat(2, minmax(118px, 150px));
     align-items: stretch;
     justify-content: end;
     column-gap: 8px;

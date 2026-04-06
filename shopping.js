@@ -20,6 +20,7 @@ const deleteListBtn = document.getElementById('deleteListBtn');
 const searchResults = document.getElementById('searchResults');
 const cartList = document.getElementById('cartList');
 const cartMeta = document.getElementById('cartMeta');
+const estimatedTotal = document.getElementById('estimatedTotal');
 const pickedTotal = document.getElementById('pickedTotal');
 
 const resultCardTemplate = document.getElementById('resultCardTemplate');
@@ -899,12 +900,16 @@ function renderCart() {
 }
 
 function renderSummary() {
+  const estimated = state.cart.reduce((sum, item) => {
+    return sum + (item.price_value || 0) * item.qty;
+  }, 0);
   const picked = state.cart.reduce((sum, item) => {
     if (!item.checked) return sum;
     return sum + (item.price_value || 0) * item.qty;
   }, 0);
 
-  pickedTotal.textContent = formatWon(picked);
+  if (estimatedTotal) estimatedTotal.textContent = formatWon(estimated);
+  if (pickedTotal) pickedTotal.textContent = formatWon(picked);
 }
 
 async function addToCart(item) {

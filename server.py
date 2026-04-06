@@ -78,6 +78,8 @@ class ShoppingList(Base):
     target_year = Column(Integer, nullable=True, index=True)
     target_month = Column(Integer, nullable=True, index=True)
     budget = Column(Integer, nullable=False, default=0)
+    estimated_total = Column(Integer, nullable=False, default=0)
+    picked_total = Column(Integer, nullable=False, default=0)
     status = Column(String(24), nullable=False, default="draft", index=True)
     notes = Column(Text, nullable=True)
     source_list_id = Column(String(36), ForeignKey("shopping_lists.id", ondelete="SET NULL"), nullable=True)
@@ -245,6 +247,8 @@ class ShoppingListOut(ShoppingListBase):
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
+    estimated_total: int = 0
+    picked_total: int = 0
     items: List[ShoppingItemOut] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
@@ -488,6 +492,32 @@ def _shopping_list_totals(shopping_list: ShoppingList) -> Tuple[int, int, int, i
     return item_count, checked_count, estimated_total, picked_total
 
 
+def _update_shopping_list_totals(shopping_list: ShoppingList) -> Tuple[int, int, int, int]:
+    item_count, checked_count, estimated_total, picked_total = _shopping_list_totals(shopping_list)
+    shopping_list.estimated_total = estimated_total
+    shopping_list.picked_total = picked_total
+    return item_count, checked_count, estimated_total, picked_total
+
+
+def _update_shopping_list_totals_from_db(db: Session, shopping_list: ShoppingList) -> Tuple[int, int, int, int]:
+    rows = (
+        db.query(ShoppingItem.quantity, ShoppingItem.expected_price, ShoppingItem.is_checked)
+        .filter(ShoppingItem.list_id == shopping_list.id)
+        .all()
+    )
+    item_count = len(rows)
+    checked_count = sum(1 for quantity, expected_price, is_checked in rows if is_checked)
+    estimated_total = sum((expected_price or 0) * max(quantity or 1, 1) for quantity, expected_price, _ in rows)
+    picked_total = sum(
+        (expected_price or 0) * max(quantity or 1, 1)
+        for quantity, expected_price, is_checked in rows
+        if is_checked
+    )
+    shopping_list.estimated_total = estimated_total
+    shopping_list.picked_total = picked_total
+    return item_count, checked_count, estimated_total, picked_total
+
+
 def serialize_shopping_list_summary(shopping_list: ShoppingList) -> ShoppingListSummaryOut:
     item_count, checked_count, estimated_total, picked_total = _shopping_list_totals(shopping_list)
     return ShoppingListSummaryOut(
@@ -510,6 +540,7 @@ def serialize_shopping_list_summary(shopping_list: ShoppingList) -> ShoppingList
 
 
 def serialize_shopping_list(shopping_list: ShoppingList) -> ShoppingListOut:
+    _, _, estimated_total, picked_total = _shopping_list_totals(shopping_list)
     return ShoppingListOut(
         id=shopping_list.id,
         title=shopping_list.title,
@@ -522,6 +553,8 @@ def serialize_shopping_list(shopping_list: ShoppingList) -> ShoppingListOut:
         created_at=shopping_list.created_at,
         updated_at=shopping_list.updated_at,
         completed_at=shopping_list.completed_at,
+        estimated_total=estimated_total,
+        picked_total=picked_total,
         items=[serialize_shopping_item(item) for item in shopping_list.items],
     )
 
@@ -855,6 +888,9 @@ def create_shopping_list(payload: ShoppingListIn, db: Session = Depends(get_db))
             )
         )
 
+    db.flush()
+    _update_shopping_list_totals_from_db(db, shopping_list)
+    db.add(shopping_list)
     db.commit()
     created = (
         db.query(ShoppingList)
@@ -916,6 +952,9 @@ def reset_shopping_list_items(list_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Shopping list not found")
 
     db.query(ShoppingItem).filter(ShoppingItem.list_id == list_id).delete()
+    shopping_list.estimated_total = 0
+    shopping_list.picked_total = 0
+    db.add(shopping_list)
     db.commit()
     return None
 
@@ -952,6 +991,9 @@ def replace_shopping_list_items(list_id: str, payload: List[ShoppingItemIn], db:
             )
         )
 
+    db.flush()
+    _update_shopping_list_totals_from_db(db, shopping_list)
+    db.add(shopping_list)
     db.commit()
     updated = (
         db.query(ShoppingList)
@@ -997,6 +1039,9 @@ def create_shopping_item(list_id: str, payload: ShoppingItemIn, db: Session = De
         sort_order=(max_sort_order + 1) if max_sort_order is not None and payload.sort_order == 0 else payload.sort_order,
     )
     db.add(item)
+    db.flush()
+    _update_shopping_list_totals_from_db(db, shopping_list)
+    db.add(shopping_list)
     db.commit()
     db.refresh(item)
     return serialize_shopping_item(item)
@@ -1043,6 +1088,11 @@ def update_shopping_item(item_id: str, payload: ShoppingItemUpdateIn, db: Sessio
         item.checked_at = datetime.now(timezone.utc) if payload.is_checked else None
 
     db.add(item)
+    db.flush()
+    shopping_list = db.get(ShoppingList, item.list_id)
+    if shopping_list:
+        _update_shopping_list_totals_from_db(db, shopping_list)
+        db.add(shopping_list)
     db.commit()
     db.refresh(item)
     return serialize_shopping_item(item)
@@ -1054,7 +1104,13 @@ def delete_shopping_item(item_id: str, db: Session = Depends(get_db)):
     if not item:
         raise HTTPException(status_code=404, detail="Shopping item not found")
 
+    list_id = item.list_id
     db.delete(item)
+    db.flush()
+    shopping_list = db.get(ShoppingList, list_id)
+    if shopping_list:
+        _update_shopping_list_totals_from_db(db, shopping_list)
+        db.add(shopping_list)
     db.commit()
     return None
 
