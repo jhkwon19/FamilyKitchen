@@ -250,7 +250,7 @@ p {
 
 .toolbar__intro {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   align-content: start;
   max-width: 100%;
 }
@@ -261,27 +261,23 @@ p {
   color: #41291f;
 }
 
-.toolbar__lede {
-  color: var(--muted);
-  line-height: 1.5;
-  font-size: 13px;
-}
-
 .toolbar__controls {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
   height: 100%;
 }
 
 .toolbar__budget {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 152px;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   align-items: stretch;
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-radius: 12px;
   background: rgba(255, 252, 246, 0.95);
   border: 1px solid var(--border);
-  min-height: 62px;
+  min-height: 58px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -291,6 +287,11 @@ p {
 
 .field--budget {
   max-width: none;
+}
+
+.toolbar__action {
+  display: flex;
+  align-items: stretch;
 }
 
 .results-toolbar {
@@ -362,7 +363,7 @@ p {
   min-width: 152px;
   min-height: 40px;
   white-space: nowrap;
-  align-self: end;
+  align-self: stretch;
 }
 
 .results-toolbar .btn {
@@ -420,11 +421,11 @@ p {
 }
 
 .summary-card {
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-radius: 12px;
   background: rgba(255, 252, 246, 0.95);
   border: 1px solid var(--border);
-  min-height: 62px;
+  min-height: 58px;
   display: grid;
   gap: 3px;
   align-content: start;
@@ -753,7 +754,7 @@ p {
 
 @media (min-width: 1320px) {
   .toolbar {
-    grid-template-columns: minmax(220px, 0.95fr) minmax(280px, 340px) repeat(4, minmax(120px, 0.55fr));
+    grid-template-columns: minmax(200px, 0.9fr) minmax(240px, 300px) 152px repeat(4, minmax(110px, 0.52fr));
     align-items: stretch;
     column-gap: 10px;
     row-gap: 0;
@@ -786,6 +787,10 @@ p {
   }
 
   .toolbar__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar__controls {
     grid-template-columns: 1fr;
   }
 
