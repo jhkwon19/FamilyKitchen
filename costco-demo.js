@@ -143,6 +143,8 @@ function renderResults() {
     const fragment = resultCardTemplate.content.cloneNode(true);
     const image = fragment.querySelector('[data-image]');
     const title = fragment.querySelector('[data-title]');
+    const originalPrice = fragment.querySelector('[data-original-price]');
+    const discount = fragment.querySelector('[data-discount]');
     const price = fragment.querySelector('[data-price]');
     const note = fragment.querySelector('[data-note]');
     const addBtn = fragment.querySelector('[data-add]');
@@ -151,7 +153,19 @@ function renderResults() {
     image.src = item.image_url || '';
     image.alt = item.title;
     title.textContent = item.title;
-    price.textContent = item.price_text || '가격 미노출';
+    if (item.has_discount && item.original_price_text && item.discount_text) {
+      originalPrice.hidden = false;
+      discount.hidden = false;
+      originalPrice.textContent = `정가 ${item.original_price_text}`;
+      discount.textContent = `할인 -${item.discount_text}`;
+      price.textContent = `최종가 ${item.price_text || '가격 미노출'}`;
+    } else {
+      originalPrice.hidden = true;
+      discount.hidden = true;
+      originalPrice.textContent = '';
+      discount.textContent = '';
+      price.textContent = item.price_text || '가격 미노출';
+    }
     note.textContent = item.member_only
       ? '회원 전용 또는 홈페이지 노출 기준으로 가격 확인이 제한될 수 있습니다.'
       : '공식몰 검색 결과 기준 예상 가격입니다.';

@@ -298,6 +298,28 @@ a {
   font-weight: 800;
 }
 
+.product-card__pricing {
+  display: grid;
+  gap: 4px;
+}
+
+.product-card__original,
+.product-card__discount {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.product-card__original {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.product-card__discount {
+  color: #b23a2b;
+}
+
 .product-card__note {
   margin: 0;
   color: var(--muted);

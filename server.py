@@ -695,6 +695,12 @@ def _pick_costco_image_url(images: list, fallback_url: str = "") -> str:
     return fallback_url
 
 
+def _format_costco_won(value: Optional[Union[int, float]]) -> str:
+    if value is None:
+        return ""
+    return f"{int(round(float(value))):,}원"
+
+
 def _build_costco_search_api_item(product: dict) -> Optional[dict]:
     title = _clean_text(product.get("name") or product.get("englishName") or "")
     if not title:
@@ -705,6 +711,53 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
     price_value = price.get("value")
     if price_value is None and price_text:
         price_value = _parse_costco_price(price_text)
+
+    base_price = product.get("basePrice") or {}
+    original_price_text = _clean_text(base_price.get("formattedValue") or base_price.get("formattedPrice") or "")
+    original_price_value = base_price.get("value")
+    if original_price_value is None and original_price_text:
+        original_price_value = _parse_costco_price(original_price_text)
+
+    discount = product.get("couponDiscount") or {}
+    hide_discount = bool(discount.get("hideDiscountCalculation"))
+    discount_text = _clean_text(discount.get("formattedDiscountValue") or "")
+    discount_value = discount.get("discountValue")
+    if discount_value is None and discount_text:
+        discount_value = _parse_costco_price(discount_text)
+
+    if (
+        original_price_value is None
+        and price_value is not None
+        and discount_value not in (None, 0)
+    ):
+        original_price_value = float(price_value) + float(discount_value)
+
+    if (
+        discount_value in (None, 0)
+        and original_price_value is not None
+        and price_value is not None
+        and float(original_price_value) > float(price_value)
+    ):
+        discount_value = float(original_price_value) - float(price_value)
+
+    has_discount = bool(
+        not hide_discount
+        and original_price_value is not None
+        and price_value is not None
+        and float(original_price_value) > float(price_value)
+    )
+
+    if not price_text and price_value is not None:
+        price_text = _format_costco_won(price_value)
+    if has_discount and not original_price_text and original_price_value is not None:
+        original_price_text = _format_costco_won(original_price_value)
+    if has_discount and not discount_text and discount_value not in (None, 0):
+        discount_text = _format_costco_won(discount_value)
+    if not has_discount:
+        original_price_text = ""
+        original_price_value = None
+        discount_text = ""
+        discount_value = None
 
     member_only = bool(
         product.get("hidePriceValue")
@@ -722,6 +775,11 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
         "title": title,
         "price_text": price_text,
         "price_value": price_value,
+        "original_price_text": original_price_text,
+        "original_price_value": original_price_value,
+        "discount_text": discount_text,
+        "discount_value": discount_value,
+        "has_discount": has_discount,
         "url": urljoin("https://www.costco.co.kr", product_url),
         "image_url": image_url,
         "member_only": member_only,
