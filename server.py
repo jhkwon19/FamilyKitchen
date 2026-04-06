@@ -844,6 +844,17 @@ def update_shopping_list(list_id: str, payload: ShoppingListUpdateIn, db: Sessio
     return serialize_shopping_list(shopping_list)
 
 
+@app.delete("/api/shopping/lists/{list_id}", status_code=204)
+def delete_shopping_list(list_id: str, db: Session = Depends(get_db)):
+    shopping_list = db.get(ShoppingList, list_id)
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
+
+    db.delete(shopping_list)
+    db.commit()
+    return None
+
+
 @app.delete("/api/shopping/lists/{list_id}/items", status_code=204)
 def reset_shopping_list_items(list_id: str, db: Session = Depends(get_db)):
     shopping_list = db.get(ShoppingList, list_id)

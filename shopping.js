@@ -8,6 +8,7 @@ const historyMonthSelect = document.getElementById('historyMonthSelect');
 const shoppingListSelect = document.getElementById('shoppingListSelect');
 const loadListBtn = document.getElementById('loadListBtn');
 const createListBtn = document.getElementById('createListBtn');
+const deleteListBtn = document.getElementById('deleteListBtn');
 const searchResults = document.getElementById('searchResults');
 const cartList = document.getElementById('cartList');
 const cartMeta = document.getElementById('cartMeta');
@@ -112,6 +113,12 @@ function bindEvents() {
   if (createListBtn) {
     createListBtn.addEventListener('click', async () => {
       await createShoppingListFromCurrentState();
+    });
+  }
+
+  if (deleteListBtn) {
+    deleteListBtn.addEventListener('click', async () => {
+      await deleteSelectedShoppingList();
     });
   }
 }
@@ -245,6 +252,31 @@ async function createShoppingListFromCurrentState() {
   }
   await loadSavedListsForSelectedMonth({ preferredListId: created.id });
   applyShoppingList(created);
+}
+
+async function deleteSelectedShoppingList() {
+  const listId = shoppingListSelect?.value || state.currentListId;
+  if (!listId) return;
+
+  const selected = state.savedLists.find(item => item.id === listId);
+  const label = selected?.title || state.currentListTitle || '선택한 리스트';
+  if (!window.confirm(`'${label}' 리스트를 삭제할까요?`)) return;
+
+  await request(`/api/shopping/lists/${listId}`, { method: 'DELETE' });
+  if (state.currentListId === listId) {
+    state.currentListId = null;
+    state.currentListTitle = '';
+    state.currentListYear = null;
+    state.currentListMonth = null;
+    state.cart = [];
+    state.budget = 0;
+    if (budgetInput) budgetInput.value = '';
+    saveCart();
+    saveBudget();
+  }
+
+  await loadHistoryMonths();
+  render();
 }
 
 function applyShoppingList(payload) {
@@ -593,6 +625,9 @@ function queueBudgetSave() {
 function updateListControlState() {
   if (loadListBtn) {
     loadListBtn.disabled = !shoppingListSelect || !shoppingListSelect.value;
+  }
+  if (deleteListBtn) {
+    deleteListBtn.disabled = !shoppingListSelect || !shoppingListSelect.value;
   }
 }
 
