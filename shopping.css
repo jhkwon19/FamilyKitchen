@@ -356,9 +356,9 @@ p {
   flex: 0 0 auto;
   margin-bottom: 0;
   margin-left: auto;
-  width: 100%;
+  width: min(100%, 610px);
   max-width: none;
-  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-columns: 230px minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -381,7 +381,10 @@ p {
 }
 
 .panel__header .field span {
+  display: block;
   font-size: 11px;
+  line-height: 1.2;
+  min-height: 13px;
 }
 
 .panel__header .field input {
@@ -411,6 +414,10 @@ p {
 .panel__header .category-filter {
   width: 100%;
   max-width: none;
+}
+
+.panel__header .category-filter .field {
+  gap: 4px;
 }
 
 .category-filter .field {
