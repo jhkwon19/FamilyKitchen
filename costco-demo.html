@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>코스트코 장보기 데모</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="costco-demo.css?v=1">
+</head>
+<body>
+  <main class="demo-shell">
+    <section class="hero">
+      <p class="eyebrow">DB 없이 보는 샘플 페이지</p>
+      <h1>코스트코 장보기 데모</h1>
+      <p class="lede">장보기 페이지 안에서 공식몰 상품 일부를 검색하고, 예산을 계산하고, 카트에 담은 항목을 체크하는 흐름만 먼저 검증하는 화면입니다.</p>
+      <div class="hero__meta">
+        <span class="chip">공식몰 샘플 연동</span>
+        <span class="chip">localStorage 저장</span>
+        <span class="chip">기존 레시피 페이지와 분리</span>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <div class="toolbar__search">
+        <label class="field">
+          <span>상품 검색</span>
+          <input id="searchInput" type="search" placeholder="예: 식초, 청바지, 다이슨">
+        </label>
+        <button id="refreshCatalogBtn" class="btn btn-secondary" type="button">공식몰 샘플 새로고침</button>
+      </div>
+      <div class="toolbar__budget">
+        <label class="field">
+          <span>이번 장보기 예산</span>
+          <input id="budgetInput" type="number" min="0" step="1000" placeholder="예: 250000">
+        </label>
+        <button id="resetCartBtn" class="btn btn-ghost" type="button">체크/리스트 초기화</button>
+      </div>
+    </section>
+
+    <section class="summary" aria-label="장보기 요약">
+      <article class="summary-card">
+        <span class="summary-card__label">예상 총액</span>
+        <strong id="estimatedTotal">0원</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">카트에 담은 금액</span>
+        <strong id="pickedTotal">0원</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">남은 예정 금액</span>
+        <strong id="remainingTotal">0원</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">예산 대비</span>
+        <strong id="budgetDelta">예산 미입력</strong>
+      </article>
+    </section>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">공식몰 샘플 상품</p>
+            <h2>검색 결과</h2>
+          </div>
+          <p id="catalogStatus" class="panel__hint">공식몰 샘플을 불러오는 중입니다.</p>
+        </div>
+        <div id="resultsMeta" class="results-meta"></div>
+        <div id="searchResults" class="product-grid"></div>
+      </div>
+
+      <div class="panel panel--cart">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">실사용 흐름 검증</p>
+            <h2>장보기 리스트</h2>
+          </div>
+          <p id="cartMeta" class="panel__hint">0개 담김</p>
+        </div>
+        <div id="cartList" class="cart-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <template id="resultCardTemplate">
+    <article class="product-card">
+      <img data-image alt="">
+      <div class="product-card__body">
+        <p class="product-card__title" data-title></p>
+        <p class="product-card__price" data-price></p>
+        <p class="product-card__note" data-note></p>
+        <div class="product-card__actions">
+          <button type="button" class="btn btn-primary" data-add>리스트에 담기</button>
+          <a target="_blank" rel="noreferrer" class="btn btn-link" data-open>공식몰 보기</a>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <template id="cartItemTemplate">
+    <article class="cart-item">
+      <label class="cart-item__check">
+        <input type="checkbox" data-check>
+        <span></span>
+      </label>
+      <img data-image alt="">
+      <div class="cart-item__body">
+        <div class="cart-item__top">
+          <p class="cart-item__title" data-title></p>
+          <button type="button" class="btn-icon" data-remove aria-label="항목 삭제">✕</button>
+        </div>
+        <div class="cart-item__fields">
+          <label class="mini-field">
+            <span>수량</span>
+            <input type="number" min="1" step="1" data-qty>
+          </label>
+          <label class="mini-field">
+            <span>예상 가격</span>
+            <input type="number" min="0" step="100" data-price>
+          </label>
+        </div>
+        <div class="cart-item__meta">
+          <span data-total></span>
+          <a target="_blank" rel="noreferrer" data-open>공식몰 열기</a>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="costco-demo.js?v=1" type="module"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from html import unescape
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -110,6 +110,14 @@ RecipeIn.update_forward_refs()
 RecipeOut.update_forward_refs()
 
 MAX_USER_PHOTO_BYTES = 8 * 1024 * 1024
+COSTCO_DEMO_CACHE_TTL = timedelta(minutes=30)
+COSTCO_DEMO_CACHE = {"items": [], "fetched_at": None}
+COSTCO_DEMO_FALLBACK_URLS = [
+    "https://www.costco.co.kr/p/692714",
+    "https://www.costco.co.kr/Appliances/Seasonal-Appliances/FansAir-Circulator/Dyson-HotCool-Fan-Heater-AM09/p/672973",
+    "https://www.costco.co.kr/ClothingBagsAccessories/Clothing-for-Men/Pants-for-Men/Guess-Mens-Jeans/p/677768",
+    "https://www.costco.co.kr/Foods/SaucesCondiments/SaucesDressings/De-Nigris-Organic-Apple-Cider-Vinegar-15ml-x-50/p/690444",
+]
 
 
 VALID_CUISINES = {
@@ -512,6 +520,145 @@ def _clean_text(value: str) -> str:
     return text.strip()
 
 
+def _parse_costco_price(value: str) -> Optional[int]:
+    if not value:
+        return None
+    digits = re.sub(r"[^\d]", "", value)
+    return int(digits) if digits else None
+
+
+def _extract_costco_homepage_items(html: str) -> List[dict]:
+    soup = BeautifulSoup(html, "html.parser")
+    items = []
+    seen_urls = set()
+
+    for card in soup.select("div.item.product-item"):
+        link = card.select_one(".item-name a[href]")
+        if not link:
+            continue
+
+        href = (link.get("href") or "").strip()
+        if not href:
+            continue
+
+        url = urljoin("https://www.costco.co.kr", href)
+        if url in seen_urls:
+            continue
+
+        title = _clean_text(link.get_text(" ", strip=True))
+        if not title:
+            continue
+
+        price_el = card.select_one(".product-price-amount .notranslate")
+        price_text = _clean_text(price_el.get_text(" ", strip=True)) if price_el else ""
+        image_el = card.select_one("img[src]")
+        image_url = ""
+        if image_el and image_el.get("src"):
+            image_url = urljoin("https://www.costco.co.kr", image_el.get("src"))
+
+        product_id_match = re.search(r"/p/([^/?#]+)", url)
+        product_id = product_id_match.group(1) if product_id_match else url
+        member_only = "회원 전용 아이템" in _clean_text(str(card))
+
+        items.append(
+            {
+                "id": product_id,
+                "title": title,
+                "price_text": price_text or ("회원 전용" if member_only else ""),
+                "price_value": _parse_costco_price(price_text),
+                "url": url,
+                "image_url": image_url,
+                "member_only": member_only,
+                "source": "homepage",
+            }
+        )
+        seen_urls.add(url)
+
+        if len(items) >= 36:
+            break
+
+    return items
+
+
+def _extract_costco_product_item(html: str, final_url: str) -> Optional[dict]:
+    soup = BeautifulSoup(html, "html.parser")
+    title = ""
+
+    if soup.title:
+        title = _clean_text(soup.title.get_text(" ", strip=True))
+        title = re.sub(r"\s*\|\s*코스트코 코리아\s*$", "", title)
+
+    if not title:
+        title_el = soup.select_one("h1")
+        title = _clean_text(title_el.get_text(" ", strip=True)) if title_el else ""
+
+    if not title:
+        return None
+
+    price_el = soup.select_one(".product-price-amount .notranslate")
+    price_text = _clean_text(price_el.get_text(" ", strip=True)) if price_el else ""
+
+    meta = _extract_meta(html, base_url=final_url)
+    image_url = meta.get("image", "")
+    if not image_url:
+        image_el = soup.select_one("img[src]")
+        if image_el and image_el.get("src"):
+            image_url = urljoin(final_url, image_el.get("src"))
+
+    member_only = "회원 전용 아이템" in _clean_text(html[:20000])
+    product_id_match = re.search(r"/p/([^/?#]+)", final_url)
+    product_id = product_id_match.group(1) if product_id_match else final_url
+
+    return {
+        "id": product_id,
+        "title": title,
+        "price_text": price_text or ("회원 전용" if member_only else ""),
+        "price_value": _parse_costco_price(price_text),
+        "url": final_url,
+        "image_url": image_url,
+        "member_only": member_only,
+        "source": "fallback",
+    }
+
+
+async def _load_costco_demo_catalog(force_refresh: bool = False) -> List[dict]:
+    fetched_at = COSTCO_DEMO_CACHE["fetched_at"]
+    if (
+        not force_refresh
+        and COSTCO_DEMO_CACHE["items"]
+        and fetched_at
+        and datetime.utcnow() - fetched_at < COSTCO_DEMO_CACHE_TTL
+    ):
+        return COSTCO_DEMO_CACHE["items"]
+
+    items: List[dict] = []
+    homepage_html, final_url, content_type = await _fetch_html("https://www.costco.co.kr/")
+    if "text/html" in content_type:
+        items = _extract_costco_homepage_items(homepage_html)
+
+    if len(items) < 8:
+        fallback_items = []
+        for url in COSTCO_DEMO_FALLBACK_URLS:
+            try:
+                html, resolved_url, ctype = await _fetch_html(url)
+                if "text/html" not in ctype:
+                    continue
+                item = _extract_costco_product_item(html, str(resolved_url))
+                if item:
+                    fallback_items.append(item)
+            except Exception:
+                continue
+
+        existing_urls = {item["url"] for item in items}
+        for item in fallback_items:
+            if item["url"] not in existing_urls:
+                items.append(item)
+
+    COSTCO_DEMO_CACHE["items"] = items
+    COSTCO_DEMO_CACHE["fetched_at"] = datetime.utcnow()
+    return items
+
+
 async def _fetch_html(url: str) -> Tuple[str, httpx.URL, str]:
     async with httpx.AsyncClient(follow_redirects=True, timeout=8) as client:
         resp = await client.get(
@@ -563,7 +710,32 @@ async def preview(url: HttpUrl):
         return {"title": "", "description": "", "site": "", "image": "", "snippet": ""}
 
 
+@app.get("/api/costco-demo/catalog")
+async def costco_demo_catalog(refresh: bool = False):
+    try:
+        items = await _load_costco_demo_catalog(force_refresh=refresh)
+        fetched_at = COSTCO_DEMO_CACHE["fetched_at"]
+        return {
+            "items": items,
+            "count": len(items),
+            "fetched_at": fetched_at.isoformat() if fetched_at else None,
+            "sample_note": "코스트코 공식몰 홈페이지에 노출된 상품 일부를 기반으로 만든 샘플입니다.",
+        }
+    except Exception:
+        return {
+            "items": [],
+            "count": 0,
+            "fetched_at": None,
+            "sample_note": "공식몰 샘플 상품을 불러오지 못했습니다.",
+        }
+
+
 # Serve static front-end files after API routes
+@app.get("/costco-demo")
+def costco_demo_page():
+    return FileResponse(BASE_DIR / "costco-demo.html")
+
+
 @app.get("/pc")
 def pc_page():
     return FileResponse(BASE_DIR / "pc.html")
