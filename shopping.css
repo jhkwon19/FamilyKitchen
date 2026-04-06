@@ -658,6 +658,15 @@ p {
     align-items: flex-start;
   }
 
+  .toolbar,
+  .summary {
+    margin-bottom: 4px;
+  }
+
+  .layout {
+    gap: 4px;
+  }
+
   .hero__content {
     max-width: none;
     width: 100%;
@@ -772,12 +781,12 @@ p {
 
   .toolbar,
   .summary {
-    margin: 0 16px 12px;
+    margin: 0 16px 8px;
   }
 
   .layout {
     padding: 0 16px 32px;
-    gap: 12px;
+    gap: 8px;
   }
 
   .toolbar,
