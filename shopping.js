@@ -2,6 +2,14 @@ const catalogStatus = document.getElementById('catalogStatus');
 const resultsMeta = document.getElementById('resultsMeta');
 const searchInput = document.getElementById('searchInput');
 const categoryFilterGroup = document.getElementById('categoryFilterGroup');
+const categoryPickerBtn = document.getElementById('categoryPickerBtn');
+const categoryPickerPanel = document.getElementById('categoryPickerPanel');
+const categoryPickerPath = document.getElementById('categoryPickerPath');
+const categoryPickerTrail = document.getElementById('categoryPickerTrail');
+const categoryPickerList = document.getElementById('categoryPickerList');
+const categorySelectCurrentBtn = document.getElementById('categorySelectCurrentBtn');
+const categoryPickerCloseBtn = document.getElementById('categoryPickerCloseBtn');
+const categoryClearBtn = document.getElementById('categoryClearBtn');
 const refreshCatalogBtn = document.getElementById('refreshCatalogBtn');
 const budgetInput = document.getElementById('budgetInput');
 const resetCartBtn = document.getElementById('resetCartBtn');
@@ -41,6 +49,8 @@ const state = {
   budgetSaveTimer: null,
   categoryTree: [],
   selectedCategoryPath: '',
+  browsingCategoryPath: '',
+  searchRequestId: 0,
 };
 
 if (budgetInput) {
@@ -75,6 +85,43 @@ function bindEvents() {
       refreshCatalogBtn.disabled = false;
     });
   }
+
+  if (categoryPickerBtn) {
+    categoryPickerBtn.addEventListener('click', () => {
+      toggleCategoryPicker();
+    });
+  }
+
+  if (categorySelectCurrentBtn) {
+    categorySelectCurrentBtn.addEventListener('click', async () => {
+      await selectCategoryPath(state.browsingCategoryPath);
+    });
+  }
+
+  if (categoryPickerCloseBtn) {
+    categoryPickerCloseBtn.addEventListener('click', () => {
+      closeCategoryPicker();
+    });
+  }
+
+  if (categoryClearBtn) {
+    categoryClearBtn.addEventListener('click', async () => {
+      await selectCategoryPath('');
+    });
+  }
+
+  document.addEventListener('click', event => {
+    if (!categoryFilterGroup || categoryPickerPanel?.hidden) return;
+    if (!categoryFilterGroup.contains(event.target)) {
+      closeCategoryPicker();
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      closeCategoryPicker();
+    }
+  });
 
   if (budgetInput) {
     budgetInput.addEventListener('input', () => {
@@ -136,80 +183,114 @@ async function loadCategoryTree() {
 }
 
 function renderCategoryFilters() {
-  if (!categoryFilterGroup) return;
+  if (!categoryPickerBtn) return;
+  const selectedLabel = getCategoryLabel(state.selectedCategoryPath);
+  categoryPickerBtn.textContent = selectedLabel || '전체';
+  renderCategoryPicker();
+}
 
-  categoryFilterGroup.innerHTML = '';
-  if (!state.categoryTree.length) {
-    const field = document.createElement('label');
-    field.className = 'field field--category';
-    field.innerHTML = '<span>카테고리</span><select disabled><option>카테고리 없음</option></select>';
-    categoryFilterGroup.appendChild(field);
+function renderCategoryPicker() {
+  if (!categoryPickerList || !categoryPickerTrail || !categoryPickerPath) return;
+
+  const currentNode = findCategoryNode(state.browsingCategoryPath);
+  const children = currentNode ? currentNode.children || [] : state.categoryTree;
+  const currentLabel = getCategoryLabel(state.browsingCategoryPath);
+
+  categoryPickerPath.textContent = currentLabel || '전체 카테고리';
+  if (categorySelectCurrentBtn) {
+    categorySelectCurrentBtn.disabled = !state.browsingCategoryPath;
+  }
+  renderCategoryTrail();
+
+  categoryPickerList.innerHTML = '';
+  if (!children.length) {
+    const empty = document.createElement('p');
+    empty.className = 'category-picker__empty';
+    empty.textContent = '더 이상 하위 메뉴가 없습니다.';
+    categoryPickerList.appendChild(empty);
     return;
   }
-  renderCategorySelect({
-    nodes: state.categoryTree,
-    level: 0,
-    selectedPath: state.selectedCategoryPath,
+
+  children.forEach(node => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'category-picker__item';
+    if (node.key === state.selectedCategoryPath) {
+      button.classList.add('is-selected');
+    }
+
+    const label = document.createElement('span');
+    label.textContent = node.label;
+    button.appendChild(label);
+
+    const meta = document.createElement('em');
+    meta.textContent = node.children?.length ? '하위 메뉴' : '선택';
+    button.appendChild(meta);
+
+    button.addEventListener('click', async () => {
+      if (node.children?.length) {
+        state.browsingCategoryPath = node.key;
+        renderCategoryPicker();
+        return;
+      }
+      await selectCategoryPath(node.key);
+    });
+    categoryPickerList.appendChild(button);
   });
 }
 
-function renderCategorySelect({ nodes, level, selectedPath }) {
-  if (!categoryFilterGroup || !nodes.length) return;
+function renderCategoryTrail() {
+  categoryPickerTrail.innerHTML = '';
 
-  const selectedParts = selectedPath ? selectedPath.split('/') : [];
-  const selectedValue = selectedParts.slice(0, level + 1).join('/');
-  const label = level === 0 ? '카테고리' : `하위 메뉴 ${level}`;
-
-  const field = document.createElement('label');
-  field.className = 'field field--category';
-
-  const span = document.createElement('span');
-  span.textContent = label;
-
-  const select = document.createElement('select');
-  select.dataset.categoryLevel = String(level);
-
-  const defaultOption = document.createElement('option');
-  defaultOption.value = '';
-  defaultOption.textContent = level === 0 ? '전체' : '전체 하위';
-  select.appendChild(defaultOption);
-
-  nodes.forEach(node => {
-    const option = document.createElement('option');
-    option.value = node.key;
-    option.textContent = node.label;
-    select.appendChild(option);
+  const rootButton = document.createElement('button');
+  rootButton.type = 'button';
+  rootButton.textContent = '전체';
+  rootButton.addEventListener('click', () => {
+    state.browsingCategoryPath = '';
+    renderCategoryPicker();
   });
+  categoryPickerTrail.appendChild(rootButton);
 
-  if (selectedValue && nodes.some(node => node.key === selectedValue)) {
-    select.value = selectedValue;
-  }
+  if (!state.browsingCategoryPath) return;
 
-  select.addEventListener('change', async () => {
-    const nextValue = select.value;
-    if (nextValue) {
-      state.selectedCategoryPath = nextValue;
-    } else if (level === 0) {
-      state.selectedCategoryPath = '';
-    } else {
-      state.selectedCategoryPath = selectedParts.slice(0, level).join('/');
-    }
-    renderCategoryFilters();
-    await loadSearchResults();
-  });
-
-  field.appendChild(span);
-  field.appendChild(select);
-  categoryFilterGroup.appendChild(field);
-
-  const selectedNode = nodes.find(node => node.key === select.value);
-  if (selectedNode && Array.isArray(selectedNode.children) && selectedNode.children.length) {
-    renderCategorySelect({
-      nodes: selectedNode.children,
-      level: level + 1,
-      selectedPath,
+  state.browsingCategoryPath.split('/').forEach((part, index, parts) => {
+    const key = parts.slice(0, index + 1).join('/');
+    const node = findCategoryNode(key);
+    if (!node) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = node.label;
+    button.addEventListener('click', () => {
+      state.browsingCategoryPath = key;
+      renderCategoryPicker();
     });
+    categoryPickerTrail.appendChild(button);
+  });
+}
+
+function toggleCategoryPicker() {
+  if (!categoryPickerPanel || !categoryPickerBtn) return;
+  const willOpen = categoryPickerPanel.hidden;
+  if (willOpen) {
+    state.browsingCategoryPath = state.selectedCategoryPath;
+    renderCategoryPicker();
   }
+  categoryPickerPanel.hidden = !willOpen;
+  categoryPickerBtn.setAttribute('aria-expanded', String(willOpen));
+}
+
+function closeCategoryPicker() {
+  if (!categoryPickerPanel || !categoryPickerBtn) return;
+  categoryPickerPanel.hidden = true;
+  categoryPickerBtn.setAttribute('aria-expanded', 'false');
+}
+
+async function selectCategoryPath(path) {
+  state.selectedCategoryPath = path || '';
+  state.browsingCategoryPath = state.selectedCategoryPath;
+  renderCategoryFilters();
+  closeCategoryPicker();
+  await loadSearchResults();
 }
 
 async function loadHistoryMonths() {
@@ -431,6 +512,7 @@ function render() {
 async function loadSearchResults(refresh = false) {
   const query = searchInput?.value || '';
   const category = state.selectedCategoryPath || '';
+  const requestId = ++state.searchRequestId;
   if (catalogStatus) {
     catalogStatus.textContent = refresh
       ? '공식몰 검색 결과를 다시 불러오는 중입니다.'
@@ -445,6 +527,7 @@ async function loadSearchResults(refresh = false) {
     if (category) params.set('category', category);
     if (refresh) params.set('refresh', 'true');
     const payload = await requestJson(`/api/shopping/search?${params.toString()}`);
+    if (requestId !== state.searchRequestId) return;
     state.results = Array.isArray(payload.items) ? payload.items : [];
     state.fetchedAt = payload.fetched_at;
     state.totalCatalogCount = Number(payload.total_catalog_count) || 0;
@@ -454,6 +537,7 @@ async function loadSearchResults(refresh = false) {
       catalogStatus.textContent = payload.message || '공식몰 검색 결과를 불러왔습니다.';
     }
   } catch (error) {
+    if (requestId !== state.searchRequestId) return;
     state.results = [];
     state.totalCatalogCount = 0;
     state.matchedCount = 0;
@@ -842,10 +926,14 @@ function normalize(value) {
 }
 
 function getSelectedCategoryLabel() {
-  if (!state.selectedCategoryPath) return '';
+  return getCategoryLabel(state.selectedCategoryPath);
+}
+
+function getCategoryLabel(path) {
+  if (!path) return '';
   const labels = [];
   let nodes = state.categoryTree;
-  state.selectedCategoryPath.split('/').forEach((part, index, parts) => {
+  path.split('/').forEach((part, index, parts) => {
     const key = parts.slice(0, index + 1).join('/');
     const node = nodes.find(item => item.key === key);
     if (!node) return;
@@ -853,6 +941,19 @@ function getSelectedCategoryLabel() {
     nodes = Array.isArray(node.children) ? node.children : [];
   });
   return labels.join(' > ');
+}
+
+function findCategoryNode(path) {
+  if (!path) return null;
+  let nodes = state.categoryTree;
+  let found = null;
+  path.split('/').forEach((part, index, parts) => {
+    if (!nodes?.length) return;
+    const key = parts.slice(0, index + 1).join('/');
+    found = nodes.find(item => item.key === key) || null;
+    nodes = found?.children || [];
+  });
+  return found;
 }
 
 function formatWon(value) {

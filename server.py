@@ -2032,13 +2032,20 @@ async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: 
 
     if not query.strip() and category:
         candidates = category_entries[:limit]
-        enriched_results = await asyncio.gather(
-            *[_load_costco_product_details(entry["url"]) for entry in candidates],
-            return_exceptions=True,
-        )
         items = []
+        if refresh:
+            enriched_results = await asyncio.gather(
+                *[_load_costco_product_details(entry["url"]) for entry in candidates],
+                return_exceptions=True,
+            )
+        else:
+            enriched_results = [
+                COSTCO_SHOPPING_PRODUCT_CACHE.get(entry["url"], {}).get("item")
+                for entry in candidates
+            ]
+
         for entry, result in zip(candidates, enriched_results):
-            if isinstance(result, Exception) or not result:
+            if not result or isinstance(result, Exception):
                 items.append(_fallback_costco_item(entry))
             else:
                 items.append(result)
@@ -2049,7 +2056,7 @@ async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: 
             "total_catalog_count": len(entries),
             "fetched_at": fetched_at.isoformat() if fetched_at else None,
             "mode": "category",
-            "message": "선택한 카테고리의 상품을 불러왔습니다.",
+            "message": "선택한 카테고리의 상품 후보를 불러왔습니다.",
         }
 
     try:
