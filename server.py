@@ -1111,7 +1111,50 @@ def _costco_slug_to_label(url: str) -> str:
     return re.sub(r"\s+", " ", label).strip()
 
 
-def _costco_url_to_category_text(url: str) -> str:
+COSTCO_CATEGORY_LABELS = {
+    "Appliances": "가전",
+    "Seasonal-Appliances": "계절가전",
+    "FansAir-Circulator": "선풍기/공기순환기",
+    "Air-ConditionersCooling": "에어컨/냉방",
+    "Electronics": "컴퓨터/전자제품",
+    "TVsElectronics": "TV/전자제품",
+    "Computers": "컴퓨터",
+    "Foods": "식품",
+    "Fresh-Foods": "신선식품",
+    "MeatSeafood": "정육/해산물",
+    "Bakery": "베이커리",
+    "SaucesCondiments": "소스/양념",
+    "SaucesDressings": "소스/드레싱",
+    "Snacks": "스낵",
+    "Beverages": "음료",
+    "Frozen-Foods": "냉동식품",
+    "HealthBeauty": "건강/뷰티",
+    "HouseholdPet": "생활/반려동물",
+    "FurnitureBedding": "가구/침구",
+    "ClothingBagsAccessories": "의류/가방/잡화",
+    "Clothing-for-Men": "남성의류",
+    "Clothing-for-Women": "여성의류",
+    "Pants-for-Men": "남성 바지",
+    "BabyKidsToys": "유아동/완구",
+    "SportsFitness": "스포츠/피트니스",
+    "PatioLawnGarden": "정원/야외",
+    "Automotive": "자동차용품",
+    "BusinessDelivery": "비즈니스 배송",
+    "JewelryWatches": "주얼리/시계",
+    "GiftCardsTickets": "상품권/티켓",
+    "OfficeProducts": "사무용품",
+}
+
+
+def _costco_slug_to_korean_label(slug: str) -> str:
+    if slug in COSTCO_CATEGORY_LABELS:
+        return COSTCO_CATEGORY_LABELS[slug]
+    label = slug.replace("-", " ").replace("_", " ").replace("+", " ")
+    label = re.sub(r"([a-z])([A-Z])", r"\1 \2", label)
+    return re.sub(r"\s+", " ", label).strip()
+
+
+def _costco_url_category_parts(url: str) -> List[str]:
     path = unquote(urlparse(url).path or "")
     parts = [part for part in path.split("/") if part]
     category_parts = []
@@ -1119,15 +1162,16 @@ def _costco_url_to_category_text(url: str) -> str:
         if part == "p":
             break
         category_parts.append(part)
+    return category_parts[:-1] if len(category_parts) > 1 else []
 
-    if len(category_parts) <= 1:
-        return ""
 
-    return " > ".join(
-        re.sub(r"\s+", " ", part.replace("-", " ").replace("_", " ").replace("+", " ")).strip()
-        for part in category_parts[:-1]
-        if part.strip()
-    )
+def _costco_url_to_category_key(url: str) -> str:
+    parts = _costco_url_category_parts(url)
+    return parts[0] if parts else ""
+
+
+def _costco_url_to_category_text(url: str) -> str:
+    return " > ".join(_costco_slug_to_korean_label(part) for part in _costco_url_category_parts(url) if part.strip())
 
 
 def _build_costco_sitemap_entries(xml_text: str) -> List[dict]:
@@ -1148,6 +1192,7 @@ def _build_costco_sitemap_entries(xml_text: str) -> List[dict]:
                 "id": product_id,
                 "url": url,
                 "label": label,
+                "category_key": _costco_url_to_category_key(url),
                 "search_blob": _normalize_costco_text(search_blob),
                 "search_compact": _compact_costco_text(search_blob),
             }
@@ -1197,6 +1242,7 @@ def _extract_costco_homepage_items(html: str) -> List[dict]:
                 "price_text": price_text or ("회원 전용" if member_only else ""),
                 "price_value": _parse_costco_price(price_text),
                 "url": url,
+                "category_key": _costco_url_to_category_key(url),
                 "category_text": _costco_url_to_category_text(url),
                 "image_url": image_url,
                 "member_only": member_only,
@@ -1246,6 +1292,7 @@ def _extract_costco_product_item(html: str, final_url: str) -> Optional[dict]:
         "price_text": price_text or ("회원 전용" if member_only else ""),
         "price_value": _parse_costco_price(price_text),
         "url": final_url,
+        "category_key": _costco_url_to_category_key(final_url),
         "category_text": _costco_url_to_category_text(final_url),
         "image_url": image_url,
         "member_only": member_only,
@@ -1378,6 +1425,7 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
         "discount_end_at": discount_end_at,
         "discount_period_text": discount_period_text,
         "url": absolute_product_url,
+        "category_key": _costco_url_to_category_key(absolute_product_url),
         "category_text": _costco_url_to_category_text(absolute_product_url),
         "image_url": image_url,
         "member_only": member_only,
@@ -1385,7 +1433,13 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
     }
 
 
-async def _search_costco_official_catalog(query: str, limit: int = 12) -> dict:
+def _matches_costco_category(item: dict, category: str) -> bool:
+    if not category:
+        return True
+    return (item.get("category_key") or "") == category
+
+
+async def _search_costco_official_catalog(query: str, limit: int = 12, category: str = "") -> dict:
     async with httpx.AsyncClient(follow_redirects=True, timeout=8) as client:
         response = await client.get(
             "https://www.costco.co.kr/rest/v2/korea/products/search",
@@ -1393,7 +1447,7 @@ async def _search_costco_official_catalog(query: str, limit: int = 12) -> dict:
                 "query": query.strip(),
                 "fields": "FULL",
                 "currentPage": 0,
-                "pageSize": limit,
+                "pageSize": max(limit * 4, limit) if category else limit,
             },
             headers={
                 "User-Agent": DEFAULT_UA,
@@ -1406,12 +1460,14 @@ async def _search_costco_official_catalog(query: str, limit: int = 12) -> dict:
     items = []
     for product in payload.get("products") or []:
         item = _build_costco_search_api_item(product)
-        if item:
+        if item and _matches_costco_category(item, category):
             items.append(item)
 
     pagination = payload.get("pagination") or {}
     matched_count = pagination.get("totalResults")
-    if not isinstance(matched_count, int):
+    if category:
+        matched_count = len(items)
+    elif not isinstance(matched_count, int):
         matched_count = len(items)
 
     return {
@@ -1535,6 +1591,7 @@ def _fallback_costco_item(entry: dict) -> dict:
         "price_text": "가격은 결과 클릭 시 확인",
         "price_value": None,
         "url": entry["url"],
+        "category_key": entry.get("category_key") or _costco_url_to_category_key(entry["url"]),
         "category_text": _costco_url_to_category_text(entry["url"]),
         "image_url": "",
         "member_only": False,
@@ -1542,11 +1599,12 @@ def _fallback_costco_item(entry: dict) -> dict:
     }
 
 
-async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: bool = False) -> dict:
+async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: bool = False, category: str = "") -> dict:
     entries = await _load_costco_shopping_sitemap(force_refresh=refresh)
     fetched_at = COSTCO_SHOPPING_SITEMAP_CACHE["fetched_at"]
+    category_entries = [entry for entry in entries if _matches_costco_category(entry, category)] if category else entries
 
-    if not query.strip():
+    if not query.strip() and not category:
         featured = await _load_costco_shopping_catalog(force_refresh=refresh)
         return {
             "items": featured[:limit],
@@ -1557,14 +1615,36 @@ async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: 
             "message": "공식몰 상품 목록을 불러왔습니다.",
         }
 
+    if not query.strip() and category:
+        candidates = category_entries[:limit]
+        enriched_results = await asyncio.gather(
+            *[_load_costco_product_details(entry["url"]) for entry in candidates],
+            return_exceptions=True,
+        )
+        items = []
+        for entry, result in zip(candidates, enriched_results):
+            if isinstance(result, Exception) or not result:
+                items.append(_fallback_costco_item(entry))
+            else:
+                items.append(result)
+
+        return {
+            "items": items,
+            "matched_count": len(category_entries),
+            "total_catalog_count": len(entries),
+            "fetched_at": fetched_at.isoformat() if fetched_at else None,
+            "mode": "category",
+            "message": "선택한 카테고리의 상품을 불러왔습니다.",
+        }
+
     try:
-        payload = await _search_costco_official_catalog(query, limit=limit)
+        payload = await _search_costco_official_catalog(query, limit=limit, category=category)
         payload["total_catalog_count"] = len(entries)
         payload["fetched_at"] = fetched_at.isoformat() if fetched_at else None
         return payload
     except Exception:
         scored = []
-        for entry in entries:
+        for entry in category_entries:
             score = _score_costco_entry(entry, query)
             if score >= 0:
                 scored.append((score, entry))
@@ -1670,10 +1750,10 @@ async def shopping_catalog(refresh: bool = False):
 
 
 @app.get("/api/shopping/search")
-async def shopping_search(q: str = "", limit: int = 12, refresh: bool = False):
+async def shopping_search(q: str = "", limit: int = 12, refresh: bool = False, category: str = ""):
     safe_limit = max(1, min(limit, 24))
     try:
-        payload = await _search_costco_shopping_catalog(q, limit=safe_limit, refresh=refresh)
+        payload = await _search_costco_shopping_catalog(q, limit=safe_limit, refresh=refresh, category=category.strip())
         return {
             "items": payload["items"],
             "count": len(payload["items"]),

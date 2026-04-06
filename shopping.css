@@ -318,6 +318,10 @@ p {
   max-width: 280px;
 }
 
+.field--category {
+  max-width: 170px;
+}
+
 .field--month {
   max-width: 122px;
 }
@@ -332,7 +336,7 @@ p {
 
 .results-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 280px) auto;
+  grid-template-columns: minmax(0, 240px) minmax(0, 170px) auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 12px;

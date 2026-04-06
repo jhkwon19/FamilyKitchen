@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="shopping.css?v=16">
+  <link rel="stylesheet" href="shopping.css?v=17">
 </head>
 <body>
   <main class="shopping-shell">
@@ -79,6 +79,26 @@
           <label class="field field--search">
             <span>상품 검색</span>
             <input id="searchInput" type="search" placeholder="예: dyson, vinegar, 청바지">
+          </label>
+          <label class="field field--category">
+            <span>카테고리</span>
+            <select id="categoryFilterSelect">
+              <option value="">전체</option>
+              <option value="Foods">식품</option>
+              <option value="Appliances">가전</option>
+              <option value="Electronics">컴퓨터/전자제품</option>
+              <option value="FurnitureBedding">가구/침구</option>
+              <option value="HouseholdPet">생활/반려동물</option>
+              <option value="HealthBeauty">건강/뷰티</option>
+              <option value="ClothingBagsAccessories">의류/가방/잡화</option>
+              <option value="BabyKidsToys">유아동/완구</option>
+              <option value="SportsFitness">스포츠/피트니스</option>
+              <option value="PatioLawnGarden">정원/야외</option>
+              <option value="Automotive">자동차용품</option>
+              <option value="BusinessDelivery">비즈니스 배송</option>
+              <option value="JewelryWatches">주얼리/시계</option>
+              <option value="GiftCardsTickets">상품권/티켓</option>
+            </select>
           </label>
           <button id="refreshCatalogBtn" class="btn btn-primary" type="button">공식몰 결과 새로고침</button>
         </div>
@@ -167,6 +187,6 @@
     </article>
   </template>
 
-  <script src="shopping.js?v=13" type="module"></script>
+  <script src="shopping.js?v=14" type="module"></script>
 </body>
 </html>

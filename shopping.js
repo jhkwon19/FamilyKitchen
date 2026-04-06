@@ -1,6 +1,7 @@
 const catalogStatus = document.getElementById('catalogStatus');
 const resultsMeta = document.getElementById('resultsMeta');
 const searchInput = document.getElementById('searchInput');
+const categoryFilterSelect = document.getElementById('categoryFilterSelect');
 const refreshCatalogBtn = document.getElementById('refreshCatalogBtn');
 const budgetInput = document.getElementById('budgetInput');
 const resetCartBtn = document.getElementById('resetCartBtn');
@@ -69,6 +70,12 @@ function bindEvents() {
       refreshCatalogBtn.disabled = true;
       await loadSearchResults(true);
       refreshCatalogBtn.disabled = false;
+    });
+  }
+
+  if (categoryFilterSelect) {
+    categoryFilterSelect.addEventListener('change', async () => {
+      await loadSearchResults();
     });
   }
 
@@ -338,6 +345,7 @@ function render() {
 
 async function loadSearchResults(refresh = false) {
   const query = searchInput?.value || '';
+  const category = categoryFilterSelect?.value || '';
   if (catalogStatus) {
     catalogStatus.textContent = refresh
       ? '공식몰 검색 결과를 다시 불러오는 중입니다.'
@@ -349,6 +357,7 @@ async function loadSearchResults(refresh = false) {
       q: query,
       limit: '12',
     });
+    if (category) params.set('category', category);
     if (refresh) params.set('refresh', 'true');
     const payload = await requestJson(`/api/shopping/search?${params.toString()}`);
     state.results = Array.isArray(payload.items) ? payload.items : [];
