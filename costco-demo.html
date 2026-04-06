@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="costco-demo.css?v=4">
+  <link rel="stylesheet" href="costco-demo.css?v=5">
 </head>
 <body>
   <main class="demo-shell">
@@ -29,48 +29,64 @@
       </div>
     </section>
 
-    <section class="toolbar">
-      <div class="toolbar__search">
-        <label class="field">
-          <span>상품 검색</span>
-          <input id="searchInput" type="search" placeholder="예: dyson, vinegar, 청바지">
-        </label>
-        <button id="refreshCatalogBtn" class="btn btn-secondary" type="button">공식몰 결과 새로고침</button>
+    <section class="toolbar" aria-label="장보기 준비">
+      <div class="toolbar__intro">
+        <p class="eyebrow">예산과 검색 설정</p>
+        <h2>장보기 준비</h2>
+        <p class="toolbar__lede">이번 장보기 예산을 먼저 잡고, 공식몰 검색 결과에서 필요한 상품을 바로 리스트에 담아보세요.</p>
       </div>
-      <div class="toolbar__budget">
-        <label class="field">
-          <span>이번 장보기 예산</span>
-          <input id="budgetInput" type="number" min="0" step="1000" placeholder="예: 250000">
-        </label>
-        <button id="resetCartBtn" class="btn btn-ghost" type="button">체크/리스트 초기화</button>
+      <div class="toolbar__controls">
+        <div class="toolbar__search">
+          <label class="field">
+            <span>상품 검색</span>
+            <input id="searchInput" type="search" placeholder="예: dyson, vinegar, 청바지">
+          </label>
+          <button id="refreshCatalogBtn" class="btn btn-primary" type="button">공식몰 결과 새로고침</button>
+        </div>
+        <div class="toolbar__budget">
+          <label class="field">
+            <span>이번 장보기 예산</span>
+            <input id="budgetInput" type="number" min="0" step="1000" placeholder="예: 250000">
+          </label>
+          <button id="resetCartBtn" class="btn btn-ghost" type="button">체크/리스트 초기화</button>
+        </div>
       </div>
     </section>
 
     <section class="summary" aria-label="장보기 요약">
-      <article class="summary-card">
-        <span class="summary-card__label">예상 총액</span>
-        <strong id="estimatedTotal">0원</strong>
-      </article>
-      <article class="summary-card">
-        <span class="summary-card__label">카트에 담은 금액</span>
-        <strong id="pickedTotal">0원</strong>
-      </article>
-      <article class="summary-card">
-        <span class="summary-card__label">남은 예정 금액</span>
-        <strong id="remainingTotal">0원</strong>
-      </article>
-      <article class="summary-card">
-        <span class="summary-card__label">예산 대비</span>
-        <strong id="budgetDelta">예산 미입력</strong>
-      </article>
+      <div class="summary__header">
+        <div class="panel__title">
+          <div>
+            <p class="eyebrow">현재 진행</p>
+            <h2>예산 현황</h2>
+          </div>
+        </div>
+      </div>
+      <div class="summary__grid">
+        <article class="summary-card">
+          <span class="summary-card__label">예상 총액</span>
+          <strong id="estimatedTotal">0원</strong>
+        </article>
+        <article class="summary-card">
+          <span class="summary-card__label">카트에 담은 금액</span>
+          <strong id="pickedTotal">0원</strong>
+        </article>
+        <article class="summary-card">
+          <span class="summary-card__label">남은 예정 금액</span>
+          <strong id="remainingTotal">0원</strong>
+        </article>
+        <article class="summary-card">
+          <span class="summary-card__label">예산 대비</span>
+          <strong id="budgetDelta">예산 미입력</strong>
+        </article>
+      </div>
     </section>
 
     <section class="layout">
       <div class="panel">
         <div class="panel__header">
-          <div>
+          <div class="panel__title">
             <p class="eyebrow">공식몰 검색 결과</p>
-            
             <h2>검색 결과</h2>
           </div>
           <p id="catalogStatus" class="panel__hint">공식몰 검색 데이터를 불러오는 중입니다.</p>
@@ -81,7 +97,7 @@
 
       <div class="panel panel--cart">
         <div class="panel__header">
-          <div>
+          <div class="panel__title">
             <p class="eyebrow">실사용 흐름 검증</p>
             <h2>장보기 리스트</h2>
           </div>
@@ -96,7 +112,7 @@
     <article class="product-card">
       <img data-image alt="">
       <div class="product-card__body">
-        <p class="product-card__title" data-title></p>
+        <h3 class="product-card__title" data-title></h3>
         <div class="product-card__pricing">
           <p class="product-card__original" data-original-price hidden></p>
           <p class="product-card__discount" data-discount hidden></p>
@@ -121,7 +137,7 @@
       <img data-image alt="">
       <div class="cart-item__body">
         <div class="cart-item__top">
-          <p class="cart-item__title" data-title></p>
+          <h3 class="cart-item__title" data-title></h3>
           <button type="button" class="btn-icon" data-remove aria-label="항목 삭제">✕</button>
         </div>
         <div class="cart-item__fields">
