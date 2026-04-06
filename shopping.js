@@ -67,6 +67,7 @@ const state = {
   browsingCategoryPath: '',
   searchRequestId: 0,
   categoryLoading: false,
+  categoryCloseTimer: null,
 };
 
 if (budgetInput) {
@@ -145,6 +146,18 @@ function bindEvents() {
     });
   }
 
+  if (categoryPickerPanel) {
+    categoryPickerPanel.addEventListener('mouseenter', () => {
+      window.clearTimeout(state.categoryCloseTimer);
+    });
+    categoryPickerPanel.addEventListener('mouseleave', () => {
+      window.clearTimeout(state.categoryCloseTimer);
+      state.categoryCloseTimer = window.setTimeout(() => {
+        closeCategoryPicker();
+      }, 260);
+    });
+  }
+
   document.addEventListener('click', event => {
     if (!categoryPickerPanel || categoryPickerPanel.hidden) return;
     if (
@@ -160,6 +173,15 @@ function bindEvents() {
       closeCategoryPicker();
     }
   });
+
+  window.addEventListener('resize', () => {
+    if (!categoryPickerPanel || categoryPickerPanel.hidden) return;
+    positionCategoryPicker();
+  });
+  window.addEventListener('scroll', () => {
+    if (!categoryPickerPanel || categoryPickerPanel.hidden) return;
+    positionCategoryPicker();
+  }, true);
 
   if (budgetInput) {
     budgetInput.addEventListener('input', () => {
@@ -235,8 +257,6 @@ function renderCategoryFilters() {
 function renderCategoryPicker() {
   if (!categoryPickerList || !categoryPickerTrail || !categoryPickerPath) return;
 
-  const currentNode = findCategoryNode(state.browsingCategoryPath);
-  const children = currentNode ? currentNode.children || [] : state.categoryTree;
   const currentLabel = getCategoryLabel(state.browsingCategoryPath);
 
   categoryPickerPath.textContent = currentLabel || '전체 카테고리';
@@ -253,7 +273,7 @@ function renderCategoryPicker() {
     categoryPickerList.appendChild(loading);
     return;
   }
-  if (!children.length) {
+  if (!state.categoryTree.length) {
     const empty = document.createElement('p');
     empty.className = 'category-picker__empty';
     empty.textContent = '더 이상 하위 메뉴가 없습니다.';
@@ -261,34 +281,52 @@ function renderCategoryPicker() {
     return;
   }
 
-  children.forEach(node => {
-    const hasChildren = Array.isArray(node.children) && node.children.length > 0;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'category-picker__item';
-    if (node.key === state.selectedCategoryPath) {
-      button.classList.add('is-selected');
-    }
+  getCategoryColumns().forEach((nodes, index) => {
+    const column = document.createElement('div');
+    column.className = 'category-picker__column';
+    column.setAttribute('aria-label', `${index + 1}단계 카테고리`);
 
-    const label = document.createElement('span');
-    label.textContent = node.label;
-    button.appendChild(label);
+    nodes.forEach(node => {
+      const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'category-picker__item';
+      if (node.key === state.selectedCategoryPath) {
+        button.classList.add('is-selected');
+      }
+      if (isCategoryPathActive(node.key)) {
+        button.classList.add('is-active');
+      }
 
-    const meta = document.createElement('em');
-    meta.textContent = hasChildren ? '하위 메뉴 ›' : '선택';
-    button.appendChild(meta);
+      const label = document.createElement('span');
+      label.textContent = node.label;
+      button.appendChild(label);
 
-    button.addEventListener('click', async event => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (hasChildren) {
+      const meta = document.createElement('em');
+      meta.textContent = hasChildren ? '›' : '선택';
+      button.appendChild(meta);
+
+      const browseChild = () => {
+        if (!hasChildren || state.browsingCategoryPath === node.key) return;
         state.browsingCategoryPath = node.key;
         renderCategoryPicker();
-        return;
-      }
-      await selectCategoryPath(node.key);
+      };
+
+      button.addEventListener('mouseenter', browseChild);
+      button.addEventListener('focus', browseChild);
+      button.addEventListener('click', async event => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (hasChildren) {
+          browseChild();
+          return;
+        }
+        await selectCategoryPath(node.key);
+      });
+      column.appendChild(button);
     });
-    categoryPickerList.appendChild(button);
+
+    categoryPickerList.appendChild(column);
   });
 }
 
@@ -329,6 +367,7 @@ function toggleCategoryPicker() {
   if (!categoryPickerPanel || !categoryPickerBtn) return;
   const willOpen = categoryPickerPanel.hidden;
   if (willOpen) {
+    window.clearTimeout(state.categoryCloseTimer);
     state.browsingCategoryPath = state.selectedCategoryPath;
     renderCategoryPicker();
     if (!state.categoryTree.length && !state.categoryLoading) {
@@ -336,14 +375,18 @@ function toggleCategoryPicker() {
     }
   }
   categoryPickerPanel.hidden = !willOpen;
+  if (willOpen) {
+    positionCategoryPicker();
+  }
   if (categoryPickerBackdrop) {
-    categoryPickerBackdrop.hidden = !willOpen;
+    categoryPickerBackdrop.hidden = true;
   }
   categoryPickerBtn.setAttribute('aria-expanded', String(willOpen));
 }
 
 function closeCategoryPicker() {
   if (!categoryPickerPanel || !categoryPickerBtn) return;
+  window.clearTimeout(state.categoryCloseTimer);
   categoryPickerPanel.hidden = true;
   if (categoryPickerBackdrop) {
     categoryPickerBackdrop.hidden = true;
@@ -357,6 +400,43 @@ async function selectCategoryPath(path) {
   renderCategoryFilters();
   closeCategoryPicker();
   await loadSearchResults();
+}
+
+function getCategoryColumns() {
+  const columns = [];
+  let nodes = state.categoryTree;
+  columns.push(nodes);
+
+  if (!state.browsingCategoryPath) return columns;
+
+  state.browsingCategoryPath.split('/').forEach((part, index, parts) => {
+    const key = parts.slice(0, index + 1).join('/');
+    const node = nodes.find(item => item.key === key);
+    if (!node || !Array.isArray(node.children) || !node.children.length) return;
+    nodes = node.children;
+    columns.push(nodes);
+  });
+
+  return columns;
+}
+
+function isCategoryPathActive(path) {
+  if (!path || !state.browsingCategoryPath) return false;
+  return state.browsingCategoryPath === path || state.browsingCategoryPath.startsWith(`${path}/`);
+}
+
+function positionCategoryPicker() {
+  if (!categoryPickerPanel || !categoryPickerBtn) return;
+  const rect = categoryPickerBtn.getBoundingClientRect();
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const width = Math.min(720, Math.max(420, viewportWidth - 32));
+  const left = Math.max(16, Math.min(rect.left, viewportWidth - width - 16));
+  const top = Math.max(12, Math.min(rect.bottom + 8, viewportHeight - 120));
+
+  categoryPickerPanel.style.width = `${width}px`;
+  categoryPickerPanel.style.left = `${left}px`;
+  categoryPickerPanel.style.top = `${top}px`;
 }
 
 async function loadHistoryMonths() {
