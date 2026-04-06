@@ -712,7 +712,7 @@ function renderProductSyncStatus() {
   const images = Number(state.productSync.image_count) || 0;
   const discounts = Number(state.productSync.discount_count) || 0;
   const latest = state.productSync.latest_synced_at
-    ? ` · 최근 갱신 ${new Date(state.productSync.latest_synced_at).toLocaleString('ko-KR')}`
+    ? ` · 최근 갱신 ${new Date(state.productSync.latest_synced_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
     : '';
 
   productSyncStatus.textContent = total

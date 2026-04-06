@@ -323,6 +323,15 @@ COSTCO_PRODUCTS_SITEMAP_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_S
 COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS", 5, 0)
 COSTCO_PRODUCTS_AUTO_SYNC_TASK = None
 KST = timezone(timedelta(hours=9))
+
+
+def _to_kst_iso(value: Optional[datetime]) -> Optional[str]:
+    if not value:
+        return None
+    source = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return source.astimezone(KST).isoformat()
+
+
 COSTCO_SHOPPING_FALLBACK_URLS = [
     "https://www.costco.co.kr/p/692714",
     "https://www.costco.co.kr/Appliances/Seasonal-Appliances/FansAir-Circulator/Dyson-HotCool-Fan-Heater-AM09/p/672973",
@@ -2647,7 +2656,7 @@ async def _sync_costco_products_sitemap_db(db: Session, refresh: bool = False) -
     db.commit()
     return {
         "total": len(entries),
-        "synced_at": seen_at.isoformat(),
+        "synced_at": _to_kst_iso(seen_at),
     }
 
 
@@ -2688,7 +2697,7 @@ async def _sync_costco_products_details_db(db: Session, limit: int = 20, refresh
         "requested": safe_limit,
         "synced": synced,
         "failed": failed,
-        "synced_at": synced_at.isoformat(),
+        "synced_at": _to_kst_iso(synced_at),
     }
 
 
@@ -2782,8 +2791,8 @@ def shopping_products_status(db: Session = Depends(get_db)):
         "image_count": image_count,
         "discount_count": discount_count,
         "discount_period_count": discount_period_count,
-        "latest_synced_at": latest_synced_at.isoformat() if latest_synced_at else None,
-        "latest_seen_at": latest_seen_at.isoformat() if latest_seen_at else None,
+        "latest_synced_at": _to_kst_iso(latest_synced_at),
+        "latest_seen_at": _to_kst_iso(latest_seen_at),
     }
 
 
