@@ -356,7 +356,8 @@ p {
   flex: 0 0 auto;
   margin-bottom: 0;
   margin-left: auto;
-  width: min(100%, 700px);
+  width: 100%;
+  max-width: none;
   grid-template-columns: 170px minmax(0, 1fr);
   gap: 8px;
 }
@@ -372,7 +373,7 @@ p {
 }
 
 .panel--search .results-toolbar {
-  justify-self: end;
+  justify-self: stretch;
 }
 
 .panel__header .field {
@@ -405,6 +406,11 @@ p {
   position: relative;
   min-width: 0;
   max-width: 340px;
+}
+
+.panel__header .category-filter {
+  width: 100%;
+  max-width: none;
 }
 
 .category-filter .field {
