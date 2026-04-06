@@ -301,7 +301,7 @@ p {
   flex-direction: column;
   justify-content: flex-end;
   min-width: 0;
-  gap: 0;
+  gap: 4px;
   padding: 0;
   border-radius: 0;
   background: transparent;
@@ -310,12 +310,18 @@ p {
   box-shadow: none;
 }
 
+.toolbar__history-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
 .toolbar__history-fields {
   display: grid;
   grid-template-columns: repeat(2, auto);
   gap: 8px;
   align-items: end;
-  padding-top: 15px;
 }
 
 .field--search {
@@ -1590,7 +1596,6 @@ p {
 
   .toolbar__history-fields {
     grid-template-columns: 1fr;
-    padding-top: 0;
   }
 
   .manual-item-form {
