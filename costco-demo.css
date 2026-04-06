@@ -653,6 +653,57 @@ p {
   line-height: 1.6;
 }
 
+@media (min-width: 1024px) {
+  .hero {
+    padding: 8px 7vw 4px;
+    align-items: flex-start;
+  }
+
+  .hero__content {
+    max-width: none;
+    width: 100%;
+    display: block;
+    min-height: 0;
+    padding: 16px 28px 14px;
+  }
+
+  .hero__content::before {
+    width: 12px;
+    background: linear-gradient(180deg, #d67d55, #bb5c3d);
+  }
+
+  .hero__content::after {
+    content: none;
+  }
+
+  .hero__content > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .eyebrow {
+    margin-bottom: 4px;
+    font-size: 12px;
+    max-width: 460px;
+  }
+
+  .hero h1 {
+    font-size: clamp(26px, 2.4vw, 36px);
+    margin-bottom: 0;
+    line-height: 1.2;
+    max-width: 520px;
+  }
+
+  .lede {
+    max-width: 640px;
+    font-size: 13px;
+    line-height: 1.35;
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 @media (max-width: 1024px) {
   .toolbar {
     grid-template-columns: 1fr;
