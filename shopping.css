@@ -1348,7 +1348,27 @@ p {
   }
 
   .manual-item-form {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .field--manual-name {
+    grid-column: 1 / -1;
+  }
+
+  .manual-item-form .btn {
+    grid-column: 1 / -1;
+    min-height: 36px;
+  }
+
+  .manual-item-form .field {
+    gap: 4px;
+  }
+
+  .manual-item-form .field input {
+    padding: 8px 10px;
+    font-size: 16px;
   }
 
   .cart-panel__controls {
