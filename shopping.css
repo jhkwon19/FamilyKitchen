@@ -340,6 +340,13 @@ p {
   margin-bottom: 8px;
 }
 
+.panel__header .results-toolbar {
+  flex: 0 1 560px;
+  margin-bottom: 0;
+  margin-left: auto;
+  grid-template-columns: minmax(0, 260px) minmax(140px, 220px);
+}
+
 .category-filter {
   position: relative;
   min-width: 0;
@@ -1441,6 +1448,13 @@ p {
   }
 
   .results-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .panel__header .results-toolbar {
+    width: 100%;
+    flex-basis: auto;
+    margin-left: 0;
     grid-template-columns: 1fr;
   }
 
