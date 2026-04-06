@@ -145,18 +145,6 @@ function bindEvents() {
     });
   }
 
-  if (categoryPickerPanel) {
-    categoryPickerPanel.addEventListener('mouseenter', () => {
-      window.clearTimeout(state.categoryCloseTimer);
-    });
-    categoryPickerPanel.addEventListener('mouseleave', () => {
-      window.clearTimeout(state.categoryCloseTimer);
-      state.categoryCloseTimer = window.setTimeout(() => {
-        closeCategoryPicker();
-      }, 260);
-    });
-  }
-
   document.addEventListener('click', event => {
     if (!categoryPickerPanel || categoryPickerPanel.hidden) return;
     if (
