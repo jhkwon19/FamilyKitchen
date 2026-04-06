@@ -190,6 +190,31 @@ p {
   white-space: nowrap;
 }
 
+.hero__summary-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.hero__summary-row .lede {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sync-status.sync-status--hero {
+  flex: 0 0 auto;
+  max-width: 420px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .hero__meta {
   margin-top: 12px;
   display: flex;
@@ -1235,6 +1260,11 @@ p {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  .sync-status.sync-status--hero {
+    max-width: 520px;
+    font-size: 12px;
+  }
 }
 
 @media (min-width: 1025px) {
@@ -1374,6 +1404,18 @@ p {
     font-size: 13px;
     line-height: 1.45;
     white-space: normal;
+  }
+
+  .hero__summary-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sync-status.sync-status--hero {
+    max-width: none;
+    margin-left: 0;
+    text-align: left;
+    font-size: 12px;
   }
 
   .eyebrow {
