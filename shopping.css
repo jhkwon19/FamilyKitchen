@@ -237,19 +237,19 @@ p {
 
 .toolbar {
   display: grid;
-  gap: 20px;
-  padding: 22px 22px 24px 30px;
+  gap: 14px;
+  padding: 16px 18px 18px 24px;
 }
 
 .toolbar__top {
   display: grid;
   grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.6fr);
-  gap: 22px;
+  gap: 16px;
 }
 
 .toolbar__intro {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   align-content: start;
   max-width: 340px;
 }
@@ -263,13 +263,13 @@ p {
 
 .toolbar__lede {
   color: var(--muted);
-  line-height: 1.6;
-  font-size: 14px;
+  line-height: 1.5;
+  font-size: 13px;
 }
 
 .toolbar__controls {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   align-content: start;
 }
 
@@ -363,8 +363,8 @@ p {
 
 .toolbar__summary {
   display: grid;
-  gap: 14px;
-  padding-top: 18px;
+  gap: 10px;
+  padding-top: 12px;
   border-top: 1px solid rgba(98, 62, 42, 0.12);
 }
 
@@ -373,26 +373,26 @@ p {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 18px;
-  padding-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(98, 62, 42, 0.12);
 }
 
 .summary__grid {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .summary-card {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(247, 237, 223, 0.8));
   border: 1px solid rgba(138, 96, 68, 0.12);
-  min-height: 88px;
+  min-height: 72px;
   display: grid;
-  gap: 8px;
+  gap: 6px;
   align-content: start;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
@@ -406,7 +406,7 @@ p {
 }
 
 .summary-card strong {
-  font-size: clamp(16px, 2vw, 20px);
+  font-size: clamp(15px, 1.7vw, 18px);
   line-height: 1.2;
   color: #3e271d;
 }
@@ -718,7 +718,7 @@ p {
 
 @media (max-width: 1024px) {
   .toolbar {
-    gap: 18px;
+    gap: 14px;
   }
 
   .toolbar__top {
@@ -809,7 +809,7 @@ p {
 
   .toolbar,
   .panel {
-    padding: 18px 18px 20px 24px;
+    padding: 16px 16px 18px 22px;
   }
 
   .toolbar__search,
@@ -823,8 +823,8 @@ p {
     z-index: 1;
     flex-direction: column;
     align-items: flex-start;
-    margin: -18px -18px 18px -24px;
-    padding: 18px 18px 14px 24px;
+    margin: -16px -16px 14px -22px;
+    padding: 16px 16px 12px 22px;
     background: linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(247, 237, 223, 0.94));
     backdrop-filter: blur(10px);
     box-shadow: 0 10px 24px rgba(104, 62, 35, 0.08);
