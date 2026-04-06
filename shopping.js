@@ -12,7 +12,6 @@ const categoryPickerCloseBtn = document.getElementById('categoryPickerCloseBtn')
 const categoryClearBtn = document.getElementById('categoryClearBtn');
 const loadMoreResultsBtn = document.getElementById('loadMoreResultsBtn');
 const productSyncStatus = document.getElementById('productSyncStatus');
-const resetCartBtn = document.getElementById('resetCartBtn');
 const historyMonthSelect = document.getElementById('historyMonthSelect');
 const shoppingListSelect = document.getElementById('shoppingListSelect');
 const saveListBtn = document.getElementById('saveListBtn');
@@ -21,9 +20,7 @@ const deleteListBtn = document.getElementById('deleteListBtn');
 const searchResults = document.getElementById('searchResults');
 const cartList = document.getElementById('cartList');
 const cartMeta = document.getElementById('cartMeta');
-const estimatedTotal = document.getElementById('estimatedTotal');
 const pickedTotal = document.getElementById('pickedTotal');
-const remainingTotal = document.getElementById('remainingTotal');
 
 const resultCardTemplate = document.getElementById('resultCardTemplate');
 const cartItemTemplate = document.getElementById('cartItemTemplate');
@@ -175,14 +172,6 @@ function bindEvents() {
     if (!categoryPickerPanel || categoryPickerPanel.hidden) return;
     positionCategoryPicker();
   }, true);
-
-  if (resetCartBtn) {
-    resetCartBtn.addEventListener('click', () => {
-      state.cart = [];
-      saveCart();
-      render();
-    });
-  }
 
   if (historyMonthSelect) {
     historyMonthSelect.addEventListener('change', async () => {
@@ -910,16 +899,12 @@ function renderCart() {
 }
 
 function renderSummary() {
-  const estimated = state.cart.reduce((sum, item) => sum + (item.price_value || 0) * item.qty, 0);
   const picked = state.cart.reduce((sum, item) => {
     if (!item.checked) return sum;
     return sum + (item.price_value || 0) * item.qty;
   }, 0);
-  const remaining = Math.max(estimated - picked, 0);
 
-  estimatedTotal.textContent = formatWon(estimated);
   pickedTotal.textContent = formatWon(picked);
-  remainingTotal.textContent = formatWon(remaining);
 }
 
 async function addToCart(item) {
