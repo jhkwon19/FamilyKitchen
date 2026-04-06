@@ -300,13 +300,13 @@ p {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: rgba(255, 252, 246, 0.95);
-  border: 1px solid var(--border);
-  min-height: 54px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  gap: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  min-height: 0;
+  box-shadow: none;
 }
 
 .toolbar__history-fields {
@@ -795,8 +795,8 @@ p {
 
 .cart-panel__controls {
   display: grid;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .check-mode-summary {
@@ -808,10 +808,33 @@ p {
   grid-template-columns: minmax(160px, 1fr) minmax(70px, 84px) minmax(100px, 120px) auto;
   gap: 8px;
   align-items: end;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+}
+
+.cart-panel__controls .field {
+  gap: 4px;
+}
+
+.cart-panel__controls .field span {
+  font-size: 11px;
+}
+
+.cart-panel__controls .field input,
+.cart-panel__controls .field select {
+  min-height: 34px;
   padding: 8px 10px;
-  border-radius: 12px;
-  background: rgba(255, 252, 246, 0.95);
-  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.cart-panel__controls .toolbar__mini-btn {
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
 }
 
 .field--manual-qty,
@@ -1511,7 +1534,7 @@ p {
   .manual-item-form {
     grid-template-columns: 1fr 1fr;
     gap: 6px;
-    padding: 8px;
+    padding: 0;
   }
 
   .field--manual-name {
@@ -1520,7 +1543,7 @@ p {
 
   .manual-item-form .btn {
     grid-column: 1 / -1;
-    min-height: 36px;
+    min-height: 34px;
   }
 
   .manual-item-form .field {
@@ -1529,7 +1552,7 @@ p {
 
   .manual-item-form .field input {
     padding: 8px 10px;
-    font-size: 16px;
+    font-size: 12px;
   }
 
   .cart-panel__controls {
@@ -1623,6 +1646,11 @@ p {
   .field input,
   .mini-field input {
     font-size: 16px;
+  }
+
+  .cart-panel__controls .field input,
+  .cart-panel__controls .field select {
+    font-size: 12px;
   }
 }
 
