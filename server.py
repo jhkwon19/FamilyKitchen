@@ -312,6 +312,8 @@ COSTCO_SHOPPING_PRODUCT_CACHE = {}
 COSTCO_PRODUCTS_AUTO_SYNC_ENABLED = os.environ.get("COSTCO_PRODUCTS_AUTO_SYNC", "1").lower() not in {"0", "false", "no"}
 COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE", 30, 1, 100)
 COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS", 600, 60)
+COSTCO_PRODUCTS_BOOTSTRAP_SYNC_BATCH_SIZE = _read_int_env("COSTCO_PRODUCTS_BOOTSTRAP_SYNC_BATCH_SIZE", 80, 1, 200)
+COSTCO_PRODUCTS_BOOTSTRAP_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_BOOTSTRAP_SYNC_INTERVAL_SECONDS", 120, 30)
 COSTCO_PRODUCTS_SITEMAP_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_SITEMAP_SYNC_INTERVAL_SECONDS", 86400, 3600)
 COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS", 5, 0)
 COSTCO_PRODUCTS_AUTO_SYNC_TASK = None
@@ -2419,11 +2421,15 @@ async def _sync_costco_products_sitemap_db(db: Session, refresh: bool = False) -
 
 
 async def _sync_costco_products_details_db(db: Session, limit: int = 20, refresh: bool = False) -> dict:
-    safe_limit = max(1, min(limit, 100))
+    safe_limit = max(1, min(limit, 200))
     products = (
         db.query(CostcoProduct.id, CostcoProduct.product_url)
         .filter(CostcoProduct.is_active.is_(True))
-        .order_by(CostcoProduct.last_synced_at.asc(), CostcoProduct.updated_at.asc())
+        .order_by(
+            CostcoProduct.last_synced_at.isnot(None).asc(),
+            CostcoProduct.last_synced_at.asc(),
+            CostcoProduct.updated_at.asc(),
+        )
         .limit(safe_limit)
         .all()
     )
@@ -2435,10 +2441,14 @@ async def _sync_costco_products_details_db(db: Session, limit: int = 20, refresh
         item = await _load_costco_product_details(product_url, force_refresh=refresh)
         if not item:
             failed += 1
+            product = db.get(CostcoProduct, product_id)
+            if product:
+                product.last_synced_at = synced_at
+                db.add(product)
             continue
         _upsert_costco_product_from_item(db, item, synced_at)
         synced += 1
-        if synced % 10 == 0:
+        if (synced + failed) % 10 == 0:
             db.commit()
         await asyncio.sleep(0.15)
     db.commit()
@@ -2453,9 +2463,15 @@ async def _sync_costco_products_details_db(db: Session, limit: int = 20, refresh
 async def _costco_products_auto_sync_loop():
     await asyncio.sleep(COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS)
     while True:
+        sleep_seconds = COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS
         db = SessionLocal()
         try:
             total_count = db.query(CostcoProduct).count()
+            unsynced_count = (
+                db.query(CostcoProduct)
+                .filter(CostcoProduct.is_active.is_(True), CostcoProduct.last_synced_at.is_(None))
+                .count()
+            )
             latest_seen_at = db.query(func.max(CostcoProduct.last_seen_at)).scalar()
             now = datetime.now(timezone.utc)
             latest_seen_at_utc = (
@@ -2472,10 +2488,26 @@ async def _costco_products_auto_sync_loop():
             )
             if should_sync_sitemap:
                 await _sync_costco_products_sitemap_db(db, refresh=total_count == 0)
+                unsynced_count = (
+                    db.query(CostcoProduct)
+                    .filter(CostcoProduct.is_active.is_(True), CostcoProduct.last_synced_at.is_(None))
+                    .count()
+                )
+
+            batch_size = (
+                COSTCO_PRODUCTS_BOOTSTRAP_SYNC_BATCH_SIZE
+                if unsynced_count
+                else COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE
+            )
+            sleep_seconds = (
+                COSTCO_PRODUCTS_BOOTSTRAP_SYNC_INTERVAL_SECONDS
+                if unsynced_count
+                else COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS
+            )
 
             await _sync_costco_products_details_db(
                 db,
-                limit=COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE,
+                limit=batch_size,
                 refresh=False,
             )
         except asyncio.CancelledError:
@@ -2486,7 +2518,7 @@ async def _costco_products_auto_sync_loop():
         finally:
             db.close()
 
-        await asyncio.sleep(COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS)
+        await asyncio.sleep(sleep_seconds)
 
 
 @app.get("/api/shopping/products/status")
@@ -2494,12 +2526,18 @@ def shopping_products_status(db: Session = Depends(get_db)):
     total_count = db.query(CostcoProduct).count()
     active_count = db.query(CostcoProduct).filter(CostcoProduct.is_active.is_(True)).count()
     synced_count = db.query(CostcoProduct).filter(CostcoProduct.last_synced_at.isnot(None)).count()
+    unsynced_count = db.query(CostcoProduct).filter(CostcoProduct.is_active.is_(True), CostcoProduct.last_synced_at.is_(None)).count()
+    priced_count = db.query(CostcoProduct).filter(CostcoProduct.price.isnot(None)).count()
+    image_count = db.query(CostcoProduct).filter(CostcoProduct.image_url.isnot(None), CostcoProduct.image_url != "").count()
     latest_synced_at = db.query(func.max(CostcoProduct.last_synced_at)).scalar()
     latest_seen_at = db.query(func.max(CostcoProduct.last_seen_at)).scalar()
     return {
         "total_count": total_count,
         "active_count": active_count,
         "synced_count": synced_count,
+        "unsynced_count": unsynced_count,
+        "priced_count": priced_count,
+        "image_count": image_count,
         "latest_synced_at": latest_synced_at.isoformat() if latest_synced_at else None,
         "latest_seen_at": latest_seen_at.isoformat() if latest_seen_at else None,
     }
