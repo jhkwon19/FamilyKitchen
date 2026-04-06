@@ -312,8 +312,9 @@ COSTCO_SHOPPING_PRODUCT_CACHE = {}
 COSTCO_PRODUCTS_AUTO_SYNC_ENABLED = os.environ.get("COSTCO_PRODUCTS_AUTO_SYNC", "1").lower() not in {"0", "false", "no"}
 COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE", 30, 1, 100)
 COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS", 600, 60)
-COSTCO_PRODUCTS_BOOTSTRAP_SYNC_BATCH_SIZE = _read_int_env("COSTCO_PRODUCTS_BOOTSTRAP_SYNC_BATCH_SIZE", 80, 1, 200)
-COSTCO_PRODUCTS_BOOTSTRAP_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_BOOTSTRAP_SYNC_INTERVAL_SECONDS", 120, 30)
+COSTCO_PRODUCTS_BOOTSTRAP_SYNC_BATCH_SIZE = _read_int_env("COSTCO_PRODUCTS_BOOTSTRAP_SYNC_BATCH_SIZE", 200, 1, 500)
+COSTCO_PRODUCTS_BOOTSTRAP_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_BOOTSTRAP_SYNC_INTERVAL_SECONDS", 60, 30)
+COSTCO_PRODUCTS_DETAIL_REQUEST_DELAY_SECONDS = float(os.environ.get("COSTCO_PRODUCTS_DETAIL_REQUEST_DELAY_SECONDS", "0.05"))
 COSTCO_PRODUCTS_SITEMAP_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_SITEMAP_SYNC_INTERVAL_SECONDS", 86400, 3600)
 COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS", 5, 0)
 COSTCO_PRODUCTS_AUTO_SYNC_TASK = None
@@ -2421,7 +2422,7 @@ async def _sync_costco_products_sitemap_db(db: Session, refresh: bool = False) -
 
 
 async def _sync_costco_products_details_db(db: Session, limit: int = 20, refresh: bool = False) -> dict:
-    safe_limit = max(1, min(limit, 200))
+    safe_limit = max(1, min(limit, 500))
     products = (
         db.query(CostcoProduct.id, CostcoProduct.product_url)
         .filter(CostcoProduct.is_active.is_(True))
@@ -2450,7 +2451,8 @@ async def _sync_costco_products_details_db(db: Session, limit: int = 20, refresh
         synced += 1
         if (synced + failed) % 10 == 0:
             db.commit()
-        await asyncio.sleep(0.15)
+        if COSTCO_PRODUCTS_DETAIL_REQUEST_DELAY_SECONDS > 0:
+            await asyncio.sleep(COSTCO_PRODUCTS_DETAIL_REQUEST_DELAY_SECONDS)
     db.commit()
     return {
         "requested": safe_limit,
