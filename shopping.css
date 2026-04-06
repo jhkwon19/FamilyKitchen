@@ -711,11 +711,29 @@ p {
 }
 
 .cart-panel__controls {
+  display: grid;
+  gap: 10px;
   margin-bottom: 14px;
 }
 
 .check-mode-summary {
   display: none;
+}
+
+.manual-item-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(70px, 84px) minmax(100px, 120px) auto;
+  gap: 8px;
+  align-items: end;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 252, 246, 0.95);
+  border: 1px solid var(--border);
+}
+
+.field--manual-qty,
+.field--manual-price {
+  max-width: none;
 }
 
 .panel__title {
@@ -1199,6 +1217,10 @@ p {
     grid-template-columns: 1fr 1fr;
   }
 
+  .manual-item-form {
+    grid-template-columns: 1fr 92px 120px auto;
+  }
+
   .layout {
     grid-template-columns: 1fr;
   }
@@ -1318,6 +1340,10 @@ p {
   }
 
   .toolbar__history-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .manual-item-form {
     grid-template-columns: 1fr;
   }
 

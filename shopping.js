@@ -18,6 +18,10 @@ const saveListBtn = document.getElementById('saveListBtn');
 const saveAsNewListBtn = document.getElementById('saveAsNewListBtn');
 const deleteListBtn = document.getElementById('deleteListBtn');
 const checkModeBtn = document.getElementById('checkModeBtn');
+const manualItemForm = document.getElementById('manualItemForm');
+const manualItemName = document.getElementById('manualItemName');
+const manualItemQty = document.getElementById('manualItemQty');
+const manualItemPrice = document.getElementById('manualItemPrice');
 const searchResults = document.getElementById('searchResults');
 const cartList = document.getElementById('cartList');
 const cartMeta = document.getElementById('cartMeta');
@@ -223,6 +227,13 @@ function bindEvents() {
       render();
     }
   });
+
+  if (manualItemForm) {
+    manualItemForm.addEventListener('submit', event => {
+      event.preventDefault();
+      addManualCartItem();
+    });
+  }
 }
 
 async function loadCategoryTree() {
@@ -997,6 +1008,52 @@ async function addToCart(item) {
     });
   }
 
+  saveCart();
+  render();
+}
+
+function addManualCartItem() {
+  const title = manualItemName ? manualItemName.value.trim() : '';
+  if (!title) {
+    if (manualItemName) manualItemName.focus();
+    return;
+  }
+
+  const qtyValue = manualItemQty ? Number(manualItemQty.value) : 1;
+  const priceValue = manualItemPrice ? Number(manualItemPrice.value) : 0;
+  const item = {
+    id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title,
+    image_url: '',
+    url: '',
+    qty: Math.max(1, qtyValue || 1),
+    checked: false,
+    price_value: Math.max(0, priceValue || 0),
+    price_text: formatWon(Math.max(0, priceValue || 0)),
+    costco_product_id: '',
+    original_price: null,
+    original_price_text: null,
+    discount_amount: null,
+    discount_text: null,
+    discount_period_text: null,
+    member_only: false,
+    note: '수동 추가',
+  };
+
+  const existing = findExistingCartEntry(item);
+  if (existing) {
+    existing.qty += item.qty;
+    if (!existing.price_value && item.price_value) {
+      existing.price_value = item.price_value;
+      existing.price_text = item.price_text;
+    }
+  } else {
+    state.cart.unshift(item);
+  }
+
+  if (manualItemName) manualItemName.value = '';
+  if (manualItemQty) manualItemQty.value = '1';
+  if (manualItemPrice) manualItemPrice.value = '';
   saveCart();
   render();
 }

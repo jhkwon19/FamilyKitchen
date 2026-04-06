@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/shopping.css?v=36">
+  <link rel="stylesheet" href="/shopping.css?v=37">
 </head>
 <body>
   <main class="shopping-shell">
@@ -103,6 +103,21 @@
               <button id="deleteListBtn" class="btn btn-ghost toolbar__mini-btn" type="button">리스트 삭제</button>
             </div>
           </div>
+          <form id="manualItemForm" class="manual-item-form" aria-label="수동 장보기 항목 추가">
+            <label class="field field--manual-name">
+              <span>직접 추가 품목</span>
+              <input id="manualItemName" type="text" placeholder="예: 매장 전용 상품, 푸드코트 피자">
+            </label>
+            <label class="field field--manual-qty">
+              <span>수량</span>
+              <input id="manualItemQty" type="number" min="1" step="1" value="1">
+            </label>
+            <label class="field field--manual-price">
+              <span>예상 가격</span>
+              <input id="manualItemPrice" type="number" min="0" step="100" placeholder="0">
+            </label>
+            <button class="btn btn-primary toolbar__mini-btn" type="submit">직접 추가</button>
+          </form>
         </div>
         <div class="check-mode-summary" aria-label="체크 모드 장보기 요약">
           <article class="check-mode-summary__card">
@@ -183,6 +198,6 @@
     </article>
   </template>
 
-  <script src="/shopping.js?v=39"></script>
+  <script src="/shopping.js?v=40"></script>
 </body>
 </html>
