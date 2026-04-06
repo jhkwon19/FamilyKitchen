@@ -356,7 +356,7 @@ p {
   flex: 0 0 auto;
   margin-bottom: 0;
   margin-left: auto;
-  grid-template-columns: 210px 160px;
+  grid-template-columns: 210px minmax(360px, 480px);
   gap: 8px;
 }
 
