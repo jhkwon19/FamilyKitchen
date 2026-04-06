@@ -23,6 +23,8 @@ const cartList = document.getElementById('cartList');
 const cartMeta = document.getElementById('cartMeta');
 const estimatedTotal = document.getElementById('estimatedTotal');
 const pickedTotal = document.getElementById('pickedTotal');
+const checkModeEstimatedTotal = document.querySelector('[data-check-estimated-total]');
+const checkModePickedTotal = document.querySelector('[data-check-picked-total]');
 
 const resultCardTemplate = document.getElementById('resultCardTemplate');
 const cartItemTemplate = document.getElementById('cartItemTemplate');
@@ -889,6 +891,7 @@ function renderCart() {
 
   state.cart.forEach(item => {
     const fragment = cartItemTemplate.content.cloneNode(true);
+    const cartItem = fragment.querySelector('.cart-item');
     const image = fragment.querySelector('[data-image]');
     const title = fragment.querySelector('[data-title]');
     const check = fragment.querySelector('[data-check]');
@@ -901,6 +904,7 @@ function renderCart() {
     setImageOrPlaceholder(image, item.image_url, item.title);
     title.textContent = item.title;
     check.checked = Boolean(item.checked);
+    cartItem.classList.toggle('is-checked', Boolean(item.checked));
     qty.value = String(item.qty);
     price.value = String(item.price_value || 0);
     total.textContent = `소계 ${formatWon((item.price_value || 0) * item.qty)}`;
@@ -942,6 +946,14 @@ function renderCart() {
       await removeCartItem(item);
     });
 
+    cartItem.addEventListener('click', event => {
+      if (!state.checkMode) return;
+      if (event.target.closest('input, button, a')) return;
+      item.checked = !item.checked;
+      saveCart();
+      render();
+    });
+
     cartList.appendChild(fragment);
   });
 }
@@ -957,6 +969,8 @@ function renderSummary() {
 
   if (estimatedTotal) estimatedTotal.textContent = formatWon(estimated);
   if (pickedTotal) pickedTotal.textContent = formatWon(picked);
+  if (checkModeEstimatedTotal) checkModeEstimatedTotal.textContent = formatWon(estimated);
+  if (checkModePickedTotal) checkModePickedTotal.textContent = formatWon(picked);
 }
 
 async function addToCart(item) {
