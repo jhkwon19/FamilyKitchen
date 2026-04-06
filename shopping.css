@@ -376,7 +376,7 @@ p {
 
 .summary__grid {
   display: grid;
-  gap: 14px;
+  gap: 20px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
@@ -450,7 +450,7 @@ p {
 
 .cart-list {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .product-card,
