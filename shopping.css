@@ -300,6 +300,7 @@ p {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
   gap: 0;
   padding: 0;
   border-radius: 0;
@@ -311,7 +312,7 @@ p {
 
 .toolbar__history-fields {
   display: grid;
-  grid-template-columns: minmax(108px, 122px) minmax(150px, 1fr) auto auto;
+  grid-template-columns: minmax(78px, 92px) minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: end;
 }
@@ -795,6 +796,8 @@ p {
 
 .cart-panel__controls {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -805,9 +808,10 @@ p {
 
 .manual-item-form {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(70px, 84px) minmax(100px, 120px) auto;
+  grid-template-columns: minmax(0, 1fr) 56px 86px auto;
   gap: 8px;
   align-items: end;
+  min-width: 0;
   padding: 0;
   border-radius: 0;
   background: transparent;
@@ -1339,7 +1343,7 @@ p {
   }
 
   .panel--cart .toolbar__history-fields {
-    grid-template-columns: minmax(108px, 122px) minmax(140px, 1fr) auto auto;
+    grid-template-columns: minmax(78px, 92px) minmax(0, 1fr) auto auto;
   }
 }
 
@@ -1354,6 +1358,10 @@ p {
 
   .toolbar__history-fields {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .cart-panel__controls {
+    grid-template-columns: 1fr;
   }
 
   .manual-item-form {
