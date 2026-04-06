@@ -1089,6 +1089,12 @@ html[data-variant="mobile"] body {
     border-radius: 18px;
     padding: 18px 18px 20px;
   }
+  .panel::before {
+    z-index: 15;
+    width: 8px;
+    border-radius: 18px 0 0 18px;
+    pointer-events: none;
+  }
   .panel__header {
     position: relative;
     z-index: 14;
