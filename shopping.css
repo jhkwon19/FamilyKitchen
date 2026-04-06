@@ -341,10 +341,37 @@ p {
 }
 
 .panel__header .results-toolbar {
-  flex: 0 1 560px;
+  flex: 0 0 auto;
   margin-bottom: 0;
   margin-left: auto;
-  grid-template-columns: minmax(0, 260px) minmax(140px, 220px);
+  grid-template-columns: 210px 160px;
+  gap: 8px;
+}
+
+.panel__header .field {
+  gap: 4px;
+}
+
+.panel__header .field span {
+  font-size: 11px;
+}
+
+.panel__header .field input {
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.panel__header .category-picker__button {
+  min-height: 34px;
+  padding: 8px 28px 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.panel__header .category-picker__button::after {
+  right: 10px;
 }
 
 .category-filter {
