@@ -32,13 +32,6 @@
       </div>
       <div class="toolbar__workspace">
         <div class="toolbar__controls" aria-label="검색과 예산 입력">
-          <div class="toolbar__search">
-            <label class="field field--search">
-              <span>상품 검색</span>
-              <input id="searchInput" type="search" placeholder="예: dyson, vinegar, 청바지">
-            </label>
-            <button id="refreshCatalogBtn" class="btn btn-primary" type="button">공식몰 결과 새로고침</button>
-          </div>
           <div class="toolbar__budget">
             <label class="field field--budget">
               <span>이번 장보기 예산</span>
@@ -80,6 +73,13 @@
             </div>
           </div>
           <p id="catalogStatus" class="panel__hint">공식몰 검색 데이터를 불러오는 중입니다.</p>
+        </div>
+        <div class="results-toolbar">
+          <label class="field field--search">
+            <span>상품 검색</span>
+            <input id="searchInput" type="search" placeholder="예: dyson, vinegar, 청바지">
+          </label>
+          <button id="refreshCatalogBtn" class="btn btn-primary" type="button">공식몰 결과 새로고침</button>
         </div>
         <div id="resultsMeta" class="results-meta"></div>
         <div id="searchResults" class="product-grid"></div>

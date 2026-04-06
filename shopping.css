@@ -296,6 +296,14 @@ p {
   max-width: 220px;
 }
 
+.results-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
 .field,
 .mini-field {
   display: flex;
@@ -353,6 +361,13 @@ p {
 }
 
 .toolbar__controls .btn {
+  width: 164px;
+  min-width: 164px;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.results-toolbar .btn {
   width: 164px;
   min-width: 164px;
   min-height: 42px;
@@ -835,7 +850,8 @@ p {
   }
 
   .toolbar__search,
-  .toolbar__budget {
+  .toolbar__budget,
+  .results-toolbar {
     grid-template-columns: 1fr;
   }
 
