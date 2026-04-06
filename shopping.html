@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="shopping.css?v=9">
+  <link rel="stylesheet" href="shopping.css?v=10">
 </head>
 <body>
   <main class="shopping-shell">
@@ -26,14 +26,14 @@
 
     <section class="toolbar" aria-label="장보기 준비">
       <div class="toolbar__intro">
-        <p class="eyebrow">예산과 검색 설정</p>
-        <h2>장보기 준비</h2>
+        <div class="toolbar__intro-copy">
+          <p class="eyebrow">예산과 검색 설정</p>
+          <h2>장보기 준비</h2>
+        </div>
+        <button id="resetCartBtn" class="btn btn-ghost toolbar__reset" type="button">체크리스트 초기화</button>
       </div>
       <div class="toolbar__workspace">
         <div class="toolbar__controls" aria-label="예산 설정">
-          <div class="toolbar__action">
-            <button id="resetCartBtn" class="btn btn-ghost" type="button">체크리스트 초기화</button>
-          </div>
           <div class="toolbar__budget">
             <label class="field field--budget">
               <span>이번 장보기 예산</span>

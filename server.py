@@ -15,8 +15,8 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 import httpx
 from fastapi.responses import FileResponse
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, LargeBinary, MetaData, String, Text, create_engine, func
-from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, LargeBinary, MetaData, String, Text, create_engine, func
+from sqlalchemy.orm import Session, declarative_base, relationship, selectinload, sessionmaker
 
 # Directories
 BASE_DIR = Path(__file__).parent
@@ -70,6 +70,58 @@ class Ingredient(Base):
     recipe = relationship("Recipe", back_populates="ingredients")
 
 
+class ShoppingList(Base):
+    __tablename__ = "shopping_lists"
+
+    id = Column(String(36), primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    target_year = Column(Integer, nullable=True, index=True)
+    target_month = Column(Integer, nullable=True, index=True)
+    budget = Column(Integer, nullable=False, default=0)
+    status = Column(String(24), nullable=False, default="draft", index=True)
+    notes = Column(Text, nullable=True)
+    source_list_id = Column(String(36), ForeignKey("shopping_lists.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    items = relationship(
+        "ShoppingItem",
+        cascade="all, delete-orphan",
+        back_populates="shopping_list",
+        order_by="ShoppingItem.sort_order.asc(), ShoppingItem.created_at.asc()",
+    )
+    source_list = relationship("ShoppingList", remote_side=[id], uselist=False)
+
+
+class ShoppingItem(Base):
+    __tablename__ = "shopping_items"
+
+    id = Column(String(36), primary_key=True, index=True)
+    list_id = Column(String(36), ForeignKey("shopping_lists.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_name = Column(String(255), nullable=False)
+    product_url = Column(Text, nullable=True)
+    image_url = Column(Text, nullable=True)
+    costco_product_id = Column(String(64), nullable=True, index=True)
+    quantity = Column(Integer, nullable=False, default=1)
+    expected_price = Column(Integer, nullable=False, default=0)
+    price_text = Column(String(64), nullable=True)
+    original_price = Column(Integer, nullable=True)
+    original_price_text = Column(String(64), nullable=True)
+    discount_amount = Column(Integer, nullable=True)
+    discount_text = Column(String(64), nullable=True)
+    discount_period_text = Column(String(64), nullable=True)
+    member_only = Column(Boolean, nullable=False, default=False)
+    is_checked = Column(Boolean, nullable=False, default=False, index=True)
+    checked_at = Column(DateTime(timezone=True), nullable=True)
+    note = Column(Text, nullable=True)
+    sort_order = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+    shopping_list = relationship("ShoppingList", back_populates="items")
+
+
 class RecipeIn(BaseModel):
     title: str = Field(..., max_length=255)
     url: HttpUrl
@@ -107,6 +159,85 @@ class RecipeFavoriteIn(BaseModel):
     is_favorite: bool
 
 
+class ShoppingItemBase(BaseModel):
+    product_name: str = Field(..., max_length=255)
+    product_url: Optional[str] = None
+    image_url: Optional[str] = None
+    costco_product_id: Optional[str] = Field(default=None, max_length=64)
+    quantity: int = Field(default=1, ge=1)
+    expected_price: int = Field(default=0, ge=0)
+    price_text: Optional[str] = Field(default=None, max_length=64)
+    original_price: Optional[int] = Field(default=None, ge=0)
+    original_price_text: Optional[str] = Field(default=None, max_length=64)
+    discount_amount: Optional[int] = Field(default=None, ge=0)
+    discount_text: Optional[str] = Field(default=None, max_length=64)
+    discount_period_text: Optional[str] = Field(default=None, max_length=64)
+    member_only: bool = False
+    is_checked: bool = False
+    note: Optional[str] = None
+    sort_order: int = Field(default=0, ge=0)
+
+
+class ShoppingItemIn(ShoppingItemBase):
+    pass
+
+
+class ShoppingItemOut(ShoppingItemBase):
+    id: str
+    list_id: str
+    checked_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ShoppingListBase(BaseModel):
+    title: str = Field(..., max_length=255)
+    target_year: Optional[int] = Field(default=None, ge=2000, le=2100)
+    target_month: Optional[int] = Field(default=None, ge=1, le=12)
+    budget: int = Field(default=0, ge=0)
+    status: str = Field(default="draft", max_length=24)
+    notes: Optional[str] = None
+
+
+class ShoppingListIn(ShoppingListBase):
+    source_list_id: Optional[str] = None
+    items: List[ShoppingItemIn] = Field(default_factory=list)
+
+
+class ShoppingListOut(ShoppingListBase):
+    id: str
+    source_list_id: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: Optional[datetime] = None
+    items: List[ShoppingItemOut] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ShoppingListSummaryOut(ShoppingListBase):
+    id: str
+    source_list_id: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: Optional[datetime] = None
+    item_count: int = 0
+    checked_count: int = 0
+    estimated_total: int = 0
+    picked_total: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ShoppingHistoryMonthOut(BaseModel):
+    target_year: int
+    target_month: int
+    list_count: int
+    latest_updated_at: datetime
+
+
 RecipeIn.update_forward_refs()
 RecipeOut.update_forward_refs()
 
@@ -123,6 +254,7 @@ COSTCO_SHOPPING_FALLBACK_URLS = [
     "https://www.costco.co.kr/ClothingBagsAccessories/Clothing-for-Men/Pants-for-Men/Guess-Mens-Jeans/p/677768",
     "https://www.costco.co.kr/Foods/SaucesCondiments/SaucesDressings/De-Nigris-Organic-Apple-Cider-Vinegar-15ml-x-50/p/690444",
 ]
+VALID_SHOPPING_LIST_STATUSES = {"draft", "active", "done", "archived"}
 
 
 VALID_CUISINES = {
@@ -237,6 +369,89 @@ def serialize_recipe(recipe: Recipe) -> RecipeOut:
         ingredients=[
             IngredientOut(id=ing.id, name=ing.name, amount=ing.amount) for ing in recipe.ingredients
         ],
+    )
+
+
+def normalize_shopping_list_status(value: Optional[str]) -> str:
+    lowered = (value or "draft").strip().lower()
+    if lowered not in VALID_SHOPPING_LIST_STATUSES:
+        raise HTTPException(status_code=400, detail="유효하지 않은 장보기 리스트 상태입니다.")
+    return lowered
+
+
+def serialize_shopping_item(item: ShoppingItem) -> ShoppingItemOut:
+    return ShoppingItemOut(
+        id=item.id,
+        list_id=item.list_id,
+        product_name=item.product_name,
+        product_url=item.product_url,
+        image_url=item.image_url,
+        costco_product_id=item.costco_product_id,
+        quantity=item.quantity,
+        expected_price=item.expected_price or 0,
+        price_text=item.price_text,
+        original_price=item.original_price,
+        original_price_text=item.original_price_text,
+        discount_amount=item.discount_amount,
+        discount_text=item.discount_text,
+        discount_period_text=item.discount_period_text,
+        member_only=bool(item.member_only),
+        is_checked=bool(item.is_checked),
+        checked_at=item.checked_at,
+        note=item.note,
+        sort_order=item.sort_order or 0,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+    )
+
+
+def _shopping_list_totals(shopping_list: ShoppingList) -> tuple[int, int, int, int]:
+    item_count = len(shopping_list.items)
+    checked_count = sum(1 for item in shopping_list.items if item.is_checked)
+    estimated_total = sum((item.expected_price or 0) * max(item.quantity or 1, 1) for item in shopping_list.items)
+    picked_total = sum(
+        (item.expected_price or 0) * max(item.quantity or 1, 1)
+        for item in shopping_list.items
+        if item.is_checked
+    )
+    return item_count, checked_count, estimated_total, picked_total
+
+
+def serialize_shopping_list_summary(shopping_list: ShoppingList) -> ShoppingListSummaryOut:
+    item_count, checked_count, estimated_total, picked_total = _shopping_list_totals(shopping_list)
+    return ShoppingListSummaryOut(
+        id=shopping_list.id,
+        title=shopping_list.title,
+        target_year=shopping_list.target_year,
+        target_month=shopping_list.target_month,
+        budget=shopping_list.budget or 0,
+        status=shopping_list.status,
+        notes=shopping_list.notes,
+        source_list_id=shopping_list.source_list_id,
+        created_at=shopping_list.created_at,
+        updated_at=shopping_list.updated_at,
+        completed_at=shopping_list.completed_at,
+        item_count=item_count,
+        checked_count=checked_count,
+        estimated_total=estimated_total,
+        picked_total=picked_total,
+    )
+
+
+def serialize_shopping_list(shopping_list: ShoppingList) -> ShoppingListOut:
+    return ShoppingListOut(
+        id=shopping_list.id,
+        title=shopping_list.title,
+        target_year=shopping_list.target_year,
+        target_month=shopping_list.target_month,
+        budget=shopping_list.budget or 0,
+        status=shopping_list.status,
+        notes=shopping_list.notes,
+        source_list_id=shopping_list.source_list_id,
+        created_at=shopping_list.created_at,
+        updated_at=shopping_list.updated_at,
+        completed_at=shopping_list.completed_at,
+        items=[serialize_shopping_item(item) for item in shopping_list.items],
     )
 
 
@@ -452,6 +667,122 @@ def delete_ingredient(ingredient_id: str, db: Session = Depends(get_db)):
     db.delete(ing)
     db.commit()
     return None
+
+
+@app.get("/api/shopping/lists/history", response_model=List[ShoppingHistoryMonthOut])
+def list_shopping_history_months(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            ShoppingList.target_year,
+            ShoppingList.target_month,
+            func.count(ShoppingList.id).label("list_count"),
+            func.max(ShoppingList.updated_at).label("latest_updated_at"),
+        )
+        .filter(ShoppingList.target_year.isnot(None), ShoppingList.target_month.isnot(None))
+        .group_by(ShoppingList.target_year, ShoppingList.target_month)
+        .order_by(ShoppingList.target_year.desc(), ShoppingList.target_month.desc())
+        .all()
+    )
+    return [
+        ShoppingHistoryMonthOut(
+            target_year=row.target_year,
+            target_month=row.target_month,
+            list_count=row.list_count,
+            latest_updated_at=row.latest_updated_at,
+        )
+        for row in rows
+    ]
+
+
+@app.get("/api/shopping/lists", response_model=List[ShoppingListSummaryOut])
+def list_shopping_lists(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(ShoppingList).options(selectinload(ShoppingList.items))
+    if year is not None:
+        query = query.filter(ShoppingList.target_year == year)
+    if month is not None:
+        query = query.filter(ShoppingList.target_month == month)
+    if status:
+        query = query.filter(ShoppingList.status == normalize_shopping_list_status(status))
+
+    items = (
+        query.order_by(
+            ShoppingList.target_year.desc(),
+            ShoppingList.target_month.desc(),
+            ShoppingList.updated_at.desc(),
+            ShoppingList.created_at.desc(),
+        ).all()
+    )
+    return [serialize_shopping_list_summary(item) for item in items]
+
+
+@app.get("/api/shopping/lists/{list_id}", response_model=ShoppingListOut)
+def get_shopping_list(list_id: str, db: Session = Depends(get_db)):
+    shopping_list = (
+        db.query(ShoppingList)
+        .options(selectinload(ShoppingList.items))
+        .filter(ShoppingList.id == list_id)
+        .first()
+    )
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
+    return serialize_shopping_list(shopping_list)
+
+
+@app.post("/api/shopping/lists", response_model=ShoppingListOut)
+def create_shopping_list(payload: ShoppingListIn, db: Session = Depends(get_db)):
+    shopping_list = ShoppingList(
+        id=str(uuid.uuid4()),
+        title=payload.title.strip(),
+        target_year=payload.target_year,
+        target_month=payload.target_month,
+        budget=payload.budget,
+        status=normalize_shopping_list_status(payload.status),
+        notes=payload.notes.strip() if payload.notes else None,
+        source_list_id=payload.source_list_id,
+    )
+    db.add(shopping_list)
+    db.flush()
+
+    for index, item in enumerate(payload.items):
+        db.add(
+            ShoppingItem(
+                id=str(uuid.uuid4()),
+                list_id=shopping_list.id,
+                product_name=item.product_name.strip(),
+                product_url=item.product_url.strip() if item.product_url else None,
+                image_url=item.image_url.strip() if item.image_url else None,
+                costco_product_id=item.costco_product_id.strip() if item.costco_product_id else None,
+                quantity=item.quantity,
+                expected_price=item.expected_price,
+                price_text=item.price_text.strip() if item.price_text else None,
+                original_price=item.original_price,
+                original_price_text=item.original_price_text.strip() if item.original_price_text else None,
+                discount_amount=item.discount_amount,
+                discount_text=item.discount_text.strip() if item.discount_text else None,
+                discount_period_text=item.discount_period_text.strip() if item.discount_period_text else None,
+                member_only=item.member_only,
+                is_checked=item.is_checked,
+                checked_at=datetime.now(timezone.utc) if item.is_checked else None,
+                note=item.note.strip() if item.note else None,
+                sort_order=item.sort_order if item.sort_order else index,
+            )
+        )
+
+    db.commit()
+    created = (
+        db.query(ShoppingList)
+        .options(selectinload(ShoppingList.items))
+        .filter(ShoppingList.id == shopping_list.id)
+        .first()
+    )
+    if not created:
+        raise HTTPException(status_code=500, detail="Shopping list was not persisted")
+    return serialize_shopping_list(created)
 
 
 def _extract_meta(html: str, base_url: str = "") -> dict:
