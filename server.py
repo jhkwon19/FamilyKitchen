@@ -1,7 +1,7 @@
 import os
 import asyncio
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from html import unescape
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -116,6 +116,7 @@ COSTCO_DEMO_CACHE = {"items": [], "fetched_at": None}
 COSTCO_DEMO_SITEMAP_CACHE = {"entries": [], "fetched_at": None}
 COSTCO_DEMO_PRODUCT_CACHE_TTL = timedelta(hours=12)
 COSTCO_DEMO_PRODUCT_CACHE = {}
+KST = timezone(timedelta(hours=9))
 COSTCO_DEMO_FALLBACK_URLS = [
     "https://www.costco.co.kr/p/692714",
     "https://www.costco.co.kr/Appliances/Seasonal-Appliances/FansAir-Circulator/Dyson-HotCool-Fan-Heater-AM09/p/672973",
@@ -701,6 +702,20 @@ def _format_costco_won(value: Optional[Union[int, float]]) -> str:
     return f"{int(round(float(value))):,}원"
 
 
+def _format_costco_discount_period(start_at: str, end_at: str) -> str:
+    def _to_kst_date(value: str) -> str:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return dt.astimezone(KST).strftime("%Y.%m.%d")
+
+    if not start_at or not end_at:
+        return ""
+
+    try:
+        return f"{_to_kst_date(start_at)} - {_to_kst_date(end_at)}"
+    except ValueError:
+        return ""
+
+
 def _build_costco_search_api_item(product: dict) -> Optional[dict]:
     title = _clean_text(product.get("name") or product.get("englishName") or "")
     if not title:
@@ -720,6 +735,8 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
 
     discount = product.get("couponDiscount") or {}
     hide_discount = bool(discount.get("hideDiscountCalculation"))
+    discount_start_at = discount.get("discountStartDate") or ""
+    discount_end_at = discount.get("discountEndDate") or ""
     discount_text = _clean_text(discount.get("formattedDiscountValue") or "")
     discount_value = discount.get("discountValue")
     if discount_value is None and discount_text:
@@ -758,6 +775,10 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
         original_price_value = None
         discount_text = ""
         discount_value = None
+        discount_start_at = ""
+        discount_end_at = ""
+
+    discount_period_text = _format_costco_discount_period(discount_start_at, discount_end_at) if has_discount else ""
 
     member_only = bool(
         product.get("hidePriceValue")
@@ -780,6 +801,9 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
         "discount_text": discount_text,
         "discount_value": discount_value,
         "has_discount": has_discount,
+        "discount_start_at": discount_start_at,
+        "discount_end_at": discount_end_at,
+        "discount_period_text": discount_period_text,
         "url": urljoin("https://www.costco.co.kr", product_url),
         "image_url": image_url,
         "member_only": member_only,

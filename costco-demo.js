@@ -146,6 +146,7 @@ function renderResults() {
     const originalPrice = fragment.querySelector('[data-original-price]');
     const discount = fragment.querySelector('[data-discount]');
     const price = fragment.querySelector('[data-price]');
+    const discountPeriod = fragment.querySelector('[data-discount-period]');
     const note = fragment.querySelector('[data-note]');
     const addBtn = fragment.querySelector('[data-add]');
     const openLink = fragment.querySelector('[data-open]');
@@ -159,12 +160,21 @@ function renderResults() {
       originalPrice.textContent = `정가 ${item.original_price_text}`;
       discount.textContent = `할인 -${item.discount_text}`;
       price.textContent = `최종가 ${item.price_text || '가격 미노출'}`;
+      if (item.discount_period_text) {
+        discountPeriod.hidden = false;
+        discountPeriod.textContent = `할인 기간 ${item.discount_period_text}`;
+      } else {
+        discountPeriod.hidden = true;
+        discountPeriod.textContent = '';
+      }
     } else {
       originalPrice.hidden = true;
       discount.hidden = true;
       originalPrice.textContent = '';
       discount.textContent = '';
       price.textContent = item.price_text || '가격 미노출';
+      discountPeriod.hidden = true;
+      discountPeriod.textContent = '';
     }
     note.textContent = item.member_only
       ? '회원 전용 또는 홈페이지 노출 기준으로 가격 확인이 제한될 수 있습니다.'

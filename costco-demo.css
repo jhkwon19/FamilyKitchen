@@ -304,7 +304,8 @@ a {
 }
 
 .product-card__original,
-.product-card__discount {
+.product-card__discount,
+.product-card__period {
   margin: 0;
   font-size: 13px;
   font-weight: 700;
@@ -318,6 +319,10 @@ a {
 
 .product-card__discount {
   color: #b23a2b;
+}
+
+.product-card__period {
+  color: var(--accent-warm);
 }
 
 .product-card__note {
