@@ -296,7 +296,7 @@ p {
 
 .toolbar__history-fields {
   display: grid;
-  grid-template-columns: minmax(108px, 122px) minmax(150px, 1fr) auto auto;
+  grid-template-columns: minmax(108px, 122px) minmax(150px, 1fr) auto auto auto;
   gap: 8px;
   align-items: end;
 }
@@ -869,7 +869,7 @@ p {
   }
 
   .panel--cart .toolbar__history-fields {
-    grid-template-columns: minmax(108px, 122px) minmax(140px, 1fr) auto auto;
+    grid-template-columns: minmax(108px, 122px) minmax(140px, 1fr) auto auto auto;
   }
 }
 

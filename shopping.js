@@ -7,6 +7,7 @@ const resetCartBtn = document.getElementById('resetCartBtn');
 const historyMonthSelect = document.getElementById('historyMonthSelect');
 const shoppingListSelect = document.getElementById('shoppingListSelect');
 const saveListBtn = document.getElementById('saveListBtn');
+const saveAsNewListBtn = document.getElementById('saveAsNewListBtn');
 const deleteListBtn = document.getElementById('deleteListBtn');
 const searchResults = document.getElementById('searchResults');
 const cartList = document.getElementById('cartList');
@@ -107,6 +108,12 @@ function bindEvents() {
   if (saveListBtn) {
     saveListBtn.addEventListener('click', async () => {
       await saveCurrentShoppingList();
+    });
+  }
+
+  if (saveAsNewListBtn) {
+    saveAsNewListBtn.addEventListener('click', async () => {
+      await createShoppingListFromCurrentState();
     });
   }
 
@@ -236,6 +243,10 @@ async function saveCurrentShoppingList() {
     return;
   }
 
+  await createShoppingListFromCurrentState();
+}
+
+async function createShoppingListFromCurrentState() {
   const selected = getSelectedHistoryMonth() || getCurrentYearMonth();
   const payload = {
     title: `${selected.year}년 ${selected.month}월 코스트코 장보기 ${formatDateTime(new Date().toISOString())}`,
