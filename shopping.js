@@ -32,6 +32,20 @@ const cartItemTemplate = document.getElementById('cartItemTemplate');
 
 const CART_STORAGE_KEY = 'shopping-cart-v1';
 const BUDGET_STORAGE_KEY = 'shopping-budget-v1';
+const PLACEHOLDER_IMAGE = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
+    <defs>
+      <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="#efe2d2"/>
+        <stop offset="1" stop-color="#e2eadc"/>
+      </linearGradient>
+    </defs>
+    <rect width="320" height="240" rx="28" fill="url(#bg)"/>
+    <circle cx="114" cy="98" r="30" fill="#d2b896"/>
+    <path d="M62 184l62-62 39 39 27-27 68 50H62z" fill="#b8a56f" opacity="0.86"/>
+    <text x="160" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#8a6044">이미지 준비중</text>
+  </svg>
+)}`;
 
 const state = {
   results: [],
@@ -621,8 +635,7 @@ function renderResults() {
     const addBtn = fragment.querySelector('[data-add]');
     const openLink = fragment.querySelector('[data-open]');
 
-    image.src = item.image_url || '';
-    image.alt = item.title;
+    setImageOrPlaceholder(image, item.image_url, item.title);
     title.textContent = item.title;
     if (item.has_discount && item.original_price_text && item.discount_text) {
       originalPrice.hidden = false;
@@ -703,8 +716,7 @@ function renderCart() {
     const removeBtn = fragment.querySelector('[data-remove]');
     const openLink = fragment.querySelector('[data-open]');
 
-    image.src = item.image_url || '';
-    image.alt = item.title;
+    setImageOrPlaceholder(image, item.image_url, item.title);
     title.textContent = item.title;
     check.checked = Boolean(item.checked);
     qty.value = String(item.qty);
@@ -954,6 +966,18 @@ function saveBudget() {
 
 function normalize(value) {
   return String(value || '').toLowerCase().replace(/\s+/g, '');
+}
+
+function setImageOrPlaceholder(image, src, alt) {
+  if (!image) return;
+  image.alt = alt || '상품 이미지';
+  image.classList.toggle('is-placeholder', !src);
+  image.onerror = () => {
+    image.onerror = null;
+    image.classList.add('is-placeholder');
+    image.src = PLACEHOLDER_IMAGE;
+  };
+  image.src = src || PLACEHOLDER_IMAGE;
 }
 
 function getSelectedCategoryLabel() {

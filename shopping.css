@@ -784,6 +784,12 @@ p {
   background: #ead7bc;
 }
 
+.product-card img.is-placeholder,
+.cart-item img.is-placeholder {
+  object-fit: cover;
+  filter: saturate(0.92);
+}
+
 .product-card__body {
   display: grid;
   gap: 8px;

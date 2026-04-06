@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 import httpx
 from fastapi.responses import FileResponse
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, LargeBinary, MetaData, String, Text, create_engine, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, LargeBinary, MetaData, String, Text, create_engine, func, or_
 from sqlalchemy.orm import Session, declarative_base, relationship, selectinload, sessionmaker
 
 # Directories
@@ -120,6 +120,30 @@ class ShoppingItem(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
     shopping_list = relationship("ShoppingList", back_populates="items")
+
+
+class CostcoProduct(Base):
+    __tablename__ = "costco_products"
+
+    id = Column(String(64), primary_key=True)
+    product_name = Column(String(255), nullable=False, index=True)
+    product_url = Column(Text, nullable=False)
+    image_url = Column(Text, nullable=True)
+    category_path = Column(Text, nullable=True)
+    category_text = Column(Text, nullable=True)
+    price = Column(Integer, nullable=True)
+    price_text = Column(String(64), nullable=True)
+    original_price = Column(Integer, nullable=True)
+    original_price_text = Column(String(64), nullable=True)
+    discount_amount = Column(Integer, nullable=True)
+    discount_text = Column(String(64), nullable=True)
+    discount_period_text = Column(String(64), nullable=True)
+    member_only = Column(Boolean, nullable=False, default=False)
+    is_active = Column(Boolean, nullable=False, default=True, index=True)
+    last_seen_at = Column(DateTime(timezone=True), nullable=True)
+    last_synced_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
 
 class RecipeIn(BaseModel):
@@ -269,12 +293,28 @@ class ShoppingItemUpdateIn(BaseModel):
 RecipeIn.update_forward_refs()
 RecipeOut.update_forward_refs()
 
+
+def _read_int_env(name: str, default: int, min_value: int, max_value: Optional[int] = None) -> int:
+    try:
+        value = int(os.environ.get(name, str(default)))
+    except ValueError:
+        value = default
+    value = max(min_value, value)
+    return min(value, max_value) if max_value is not None else value
+
+
 MAX_USER_PHOTO_BYTES = 8 * 1024 * 1024
 COSTCO_SHOPPING_CACHE_TTL = timedelta(minutes=30)
 COSTCO_SHOPPING_CACHE = {"items": [], "fetched_at": None}
 COSTCO_SHOPPING_SITEMAP_CACHE = {"entries": [], "fetched_at": None}
 COSTCO_SHOPPING_PRODUCT_CACHE_TTL = timedelta(hours=12)
 COSTCO_SHOPPING_PRODUCT_CACHE = {}
+COSTCO_PRODUCTS_AUTO_SYNC_ENABLED = os.environ.get("COSTCO_PRODUCTS_AUTO_SYNC", "1").lower() not in {"0", "false", "no"}
+COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE", 30, 1, 100)
+COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS", 600, 60)
+COSTCO_PRODUCTS_SITEMAP_SYNC_INTERVAL_SECONDS = _read_int_env("COSTCO_PRODUCTS_SITEMAP_SYNC_INTERVAL_SECONDS", 86400, 3600)
+COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS = _read_int_env("COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS", 5, 0)
+COSTCO_PRODUCTS_AUTO_SYNC_TASK = None
 KST = timezone(timedelta(hours=9))
 COSTCO_SHOPPING_FALLBACK_URLS = [
     "https://www.costco.co.kr/p/692714",
@@ -494,8 +534,19 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-def startup():
+async def startup():
+    global COSTCO_PRODUCTS_AUTO_SYNC_TASK
     Base.metadata.create_all(bind=engine)
+    if COSTCO_PRODUCTS_AUTO_SYNC_ENABLED and COSTCO_PRODUCTS_AUTO_SYNC_TASK is None:
+        COSTCO_PRODUCTS_AUTO_SYNC_TASK = asyncio.create_task(_costco_products_auto_sync_loop())
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    global COSTCO_PRODUCTS_AUTO_SYNC_TASK
+    if COSTCO_PRODUCTS_AUTO_SYNC_TASK:
+        COSTCO_PRODUCTS_AUTO_SYNC_TASK.cancel()
+        COSTCO_PRODUCTS_AUTO_SYNC_TASK = None
 
 
 @app.get("/api/recipes", response_model=List[RecipeOut])
@@ -2018,6 +2069,122 @@ def _fallback_costco_item(entry: dict) -> dict:
     }
 
 
+def _costco_product_to_search_item(product: CostcoProduct) -> dict:
+    has_discount = bool(
+        product.price is not None
+        and product.original_price is not None
+        and product.original_price > product.price
+    )
+    category_path = product.category_path or _costco_url_to_category_path(product.product_url)
+    return {
+        "id": product.id,
+        "title": product.product_name,
+        "price_text": product.price_text or (_format_costco_won(product.price) if product.price is not None else "가격 정보 없음"),
+        "price_value": product.price,
+        "original_price_text": product.original_price_text if has_discount else "",
+        "original_price_value": product.original_price if has_discount else None,
+        "discount_text": product.discount_text if has_discount else "",
+        "discount_value": product.discount_amount if has_discount else None,
+        "has_discount": has_discount,
+        "discount_period_text": product.discount_period_text if has_discount else "",
+        "url": product.product_url,
+        "category_key": category_path.split("/", 1)[0] if category_path else "",
+        "category_path": category_path,
+        "category_text": product.category_text or _costco_url_to_category_text(product.product_url),
+        "image_url": product.image_url or "",
+        "member_only": bool(product.member_only),
+        "source": "db-cache",
+    }
+
+
+def _upsert_costco_product_from_entry(db: Session, entry: dict, seen_at: datetime) -> CostcoProduct:
+    product = db.get(CostcoProduct, entry["id"])
+    if not product:
+        product = CostcoProduct(id=entry["id"], product_name=entry["label"] or entry["id"], product_url=entry["url"])
+    product.product_name = product.product_name or entry["label"] or entry["id"]
+    product.product_url = entry["url"]
+    product.category_path = entry.get("category_path") or _costco_url_to_category_path(entry["url"])
+    product.category_text = entry.get("category_text") or _costco_url_to_category_text(entry["url"])
+    product.is_active = True
+    product.last_seen_at = seen_at
+    db.add(product)
+    return product
+
+
+def _upsert_costco_product_from_item(db: Session, item: dict, synced_at: datetime) -> CostcoProduct:
+    product = db.get(CostcoProduct, str(item["id"]))
+    if not product:
+        product = CostcoProduct(id=str(item["id"]), product_name=item["title"], product_url=item["url"])
+    product.product_name = item["title"]
+    product.product_url = item["url"]
+    product.image_url = item.get("image_url") or None
+    product.category_path = item.get("category_path") or _costco_url_to_category_path(item["url"])
+    product.category_text = item.get("category_text") or _costco_url_to_category_text(item["url"])
+    product.price = int(float(item["price_value"])) if item.get("price_value") is not None else None
+    product.price_text = item.get("price_text") or None
+    product.original_price = int(float(item["original_price_value"])) if item.get("original_price_value") is not None else None
+    product.original_price_text = item.get("original_price_text") or None
+    product.discount_amount = int(float(item["discount_value"])) if item.get("discount_value") is not None else None
+    product.discount_text = item.get("discount_text") or None
+    product.discount_period_text = item.get("discount_period_text") or None
+    product.member_only = bool(item.get("member_only"))
+    product.is_active = True
+    product.last_seen_at = synced_at
+    product.last_synced_at = synced_at
+    db.add(product)
+    return product
+
+
+def _search_costco_products_db(db: Session, query: str, limit: int, category: str) -> Optional[dict]:
+    active_query = db.query(CostcoProduct).filter(CostcoProduct.is_active.is_(True))
+    total_count = active_query.count()
+    if total_count == 0:
+        return None
+
+    filtered = active_query
+    category_path = category.strip().strip("/")
+    if category_path:
+        filtered = filtered.filter(
+            or_(
+                CostcoProduct.category_path == category_path,
+                CostcoProduct.category_path.like(f"{category_path}/%"),
+            )
+        )
+
+    query_tokens = _tokenize_costco_text(query)
+    for token in query_tokens:
+        pattern = f"%{token}%"
+        filtered = filtered.filter(
+            or_(
+                CostcoProduct.product_name.like(pattern),
+                CostcoProduct.product_url.like(pattern),
+                CostcoProduct.category_text.like(pattern),
+                CostcoProduct.id.like(pattern),
+            )
+        )
+
+    matched_count = filtered.count()
+    if matched_count == 0 and (query.strip() or category_path):
+        return None
+    products = (
+        filtered.order_by(
+            CostcoProduct.last_synced_at.desc(),
+            CostcoProduct.updated_at.desc(),
+            CostcoProduct.product_name.asc(),
+        )
+        .limit(limit)
+        .all()
+    )
+    return {
+        "items": [_costco_product_to_search_item(product) for product in products],
+        "matched_count": matched_count,
+        "total_catalog_count": total_count,
+        "fetched_at": None,
+        "mode": "db-cache",
+        "message": "저장된 코스트코 상품 DB에서 검색했습니다.",
+    }
+
+
 async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: bool = False, category: str = "") -> dict:
     entries = await _load_costco_shopping_sitemap(force_refresh=refresh)
     fetched_at = COSTCO_SHOPPING_SITEMAP_CACHE["fetched_at"]
@@ -2195,10 +2362,148 @@ async def shopping_categories(refresh: bool = False):
         }
 
 
+async def _sync_costco_products_sitemap_db(db: Session, refresh: bool = False) -> dict:
+    entries = await _load_costco_shopping_sitemap(force_refresh=refresh)
+    seen_at = datetime.now(timezone.utc)
+    for entry in entries:
+        _upsert_costco_product_from_entry(db, entry, seen_at)
+    db.commit()
+    return {
+        "total": len(entries),
+        "synced_at": seen_at.isoformat(),
+    }
+
+
+async def _sync_costco_products_details_db(db: Session, limit: int = 20, refresh: bool = False) -> dict:
+    safe_limit = max(1, min(limit, 100))
+    products = (
+        db.query(CostcoProduct)
+        .filter(CostcoProduct.is_active.is_(True))
+        .order_by(CostcoProduct.last_synced_at.asc(), CostcoProduct.updated_at.asc())
+        .limit(safe_limit)
+        .all()
+    )
+    synced_at = datetime.now(timezone.utc)
+    synced = 0
+    failed = 0
+    for product in products:
+        item = await _load_costco_product_details(product.product_url, force_refresh=refresh)
+        if not item:
+            failed += 1
+            continue
+        _upsert_costco_product_from_item(db, item, synced_at)
+        synced += 1
+        await asyncio.sleep(0.15)
+    db.commit()
+    return {
+        "requested": safe_limit,
+        "synced": synced,
+        "failed": failed,
+        "synced_at": synced_at.isoformat(),
+    }
+
+
+async def _costco_products_auto_sync_loop():
+    await asyncio.sleep(COSTCO_PRODUCTS_AUTO_SYNC_START_DELAY_SECONDS)
+    while True:
+        db = SessionLocal()
+        try:
+            total_count = db.query(CostcoProduct).count()
+            latest_seen_at = db.query(func.max(CostcoProduct.last_seen_at)).scalar()
+            now = datetime.now(timezone.utc)
+            latest_seen_at_utc = (
+                latest_seen_at.astimezone(timezone.utc)
+                if latest_seen_at and latest_seen_at.tzinfo
+                else latest_seen_at.replace(tzinfo=timezone.utc)
+                if latest_seen_at
+                else None
+            )
+            should_sync_sitemap = (
+                total_count == 0
+                or latest_seen_at is None
+                or now - latest_seen_at_utc > timedelta(seconds=COSTCO_PRODUCTS_SITEMAP_SYNC_INTERVAL_SECONDS)
+            )
+            if should_sync_sitemap:
+                await _sync_costco_products_sitemap_db(db, refresh=total_count == 0)
+
+            await _sync_costco_products_details_db(
+                db,
+                limit=COSTCO_PRODUCTS_AUTO_SYNC_BATCH_SIZE,
+                refresh=False,
+            )
+        except asyncio.CancelledError:
+            db.close()
+            raise
+        except Exception:
+            db.rollback()
+        finally:
+            db.close()
+
+        await asyncio.sleep(COSTCO_PRODUCTS_AUTO_SYNC_INTERVAL_SECONDS)
+
+
+@app.get("/api/shopping/products/status")
+def shopping_products_status(db: Session = Depends(get_db)):
+    total_count = db.query(CostcoProduct).count()
+    active_count = db.query(CostcoProduct).filter(CostcoProduct.is_active.is_(True)).count()
+    synced_count = db.query(CostcoProduct).filter(CostcoProduct.last_synced_at.isnot(None)).count()
+    latest_synced_at = db.query(func.max(CostcoProduct.last_synced_at)).scalar()
+    latest_seen_at = db.query(func.max(CostcoProduct.last_seen_at)).scalar()
+    return {
+        "total_count": total_count,
+        "active_count": active_count,
+        "synced_count": synced_count,
+        "latest_synced_at": latest_synced_at.isoformat() if latest_synced_at else None,
+        "latest_seen_at": latest_seen_at.isoformat() if latest_seen_at else None,
+    }
+
+
+@app.post("/api/shopping/products/sync-sitemap")
+async def sync_costco_products_sitemap(refresh: bool = False, db: Session = Depends(get_db)):
+    result = await _sync_costco_products_sitemap_db(db, refresh=refresh)
+    return {
+        "total": result["total"],
+        "synced_at": result["synced_at"],
+        "message": "코스트코 sitemap 상품 URL을 DB에 저장했습니다.",
+    }
+
+
+@app.post("/api/shopping/products/sync-details")
+async def sync_costco_products_details(limit: int = 20, refresh: bool = False, db: Session = Depends(get_db)):
+    result = await _sync_costco_products_details_db(db, limit=limit, refresh=refresh)
+    return {
+        "requested": result["requested"],
+        "synced": result["synced"],
+        "failed": result["failed"],
+        "synced_at": result["synced_at"],
+        "message": "코스트코 상품 상세 정보를 DB에 갱신했습니다.",
+    }
+
+
 @app.get("/api/shopping/search")
-async def shopping_search(q: str = "", limit: int = 12, refresh: bool = False, category: str = ""):
+async def shopping_search(
+    q: str = "",
+    limit: int = 12,
+    refresh: bool = False,
+    category: str = "",
+    db: Session = Depends(get_db),
+):
     safe_limit = max(1, min(limit, 24))
     try:
+        if not refresh:
+            db_payload = _search_costco_products_db(db, q, safe_limit, category.strip())
+            if db_payload is not None:
+                return {
+                    "items": db_payload["items"],
+                    "count": len(db_payload["items"]),
+                    "total_catalog_count": db_payload["total_catalog_count"],
+                    "matched_count": db_payload["matched_count"],
+                    "fetched_at": db_payload["fetched_at"],
+                    "message": db_payload["message"],
+                    "mode": db_payload["mode"],
+                    "query": q,
+                }
+
         payload = await _search_costco_shopping_catalog(q, limit=safe_limit, refresh=refresh, category=category.strip())
         return {
             "items": payload["items"],
