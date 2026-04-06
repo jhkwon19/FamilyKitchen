@@ -979,7 +979,7 @@ async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: 
             "total_catalog_count": len(entries),
             "fetched_at": fetched_at.isoformat() if fetched_at else None,
             "mode": "featured",
-            "message": "전체 상품 수는 sitemap으로 확인하고, 기본 화면은 공식몰 메인에 노출된 상품 일부를 먼저 보여줍니다.",
+            "message": "공식몰 상품 목록을 불러왔습니다.",
         }
 
     try:

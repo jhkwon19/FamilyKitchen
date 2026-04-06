@@ -129,7 +129,7 @@ function renderResults() {
     if (query) {
       resultsMeta.textContent = `전체 상품 ${state.totalCatalogCount.toLocaleString('ko-KR')}개 중 ${state.matchedCount.toLocaleString('ko-KR')}개 매칭 · 현재 ${results.length}개 표시 · ${syncedText}`;
     } else {
-      resultsMeta.textContent = `전체 상품 ${state.totalCatalogCount.toLocaleString('ko-KR')}개 기준 기본 노출 ${results.length}개 · ${syncedText}`;
+      resultsMeta.textContent = `전체 상품 ${state.totalCatalogCount.toLocaleString('ko-KR')}개 · 현재 ${results.length}개 표시 · ${syncedText}`;
     }
   }
 
@@ -176,9 +176,13 @@ function renderResults() {
       discountPeriod.hidden = true;
       discountPeriod.textContent = '';
     }
-    note.textContent = item.member_only
-      ? '회원 전용 또는 홈페이지 노출 기준으로 가격 확인이 제한될 수 있습니다.'
-      : '공식몰 검색 결과 기준 예상 가격입니다.';
+    if (item.member_only) {
+      note.hidden = false;
+      note.textContent = '회원 전용 또는 홈페이지 노출 기준으로 가격 확인이 제한될 수 있습니다.';
+    } else {
+      note.hidden = true;
+      note.textContent = '';
+    }
     openLink.href = item.url;
 
     addBtn.addEventListener('click', () => addToCart(item));
