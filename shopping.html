@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="shopping.css?v=11">
+  <link rel="stylesheet" href="shopping.css?v=12">
 </head>
 <body>
   <main class="shopping-shell">
@@ -34,20 +34,6 @@
       </div>
       <div class="toolbar__workspace">
         <div class="toolbar__controls" aria-label="예산 설정">
-          <div class="toolbar__history">
-            <div class="toolbar__history-fields">
-              <label class="field field--month">
-                <span>저장 월</span>
-                <select id="historyMonthSelect"></select>
-              </label>
-              <label class="field field--list">
-                <span>저장된 리스트</span>
-                <select id="shoppingListSelect"></select>
-              </label>
-              <button id="loadListBtn" class="btn btn-ghost toolbar__mini-btn" type="button">불러오기</button>
-              <button id="createListBtn" class="btn btn-ghost toolbar__mini-btn" type="button">이번 달 새 리스트</button>
-            </div>
-          </div>
           <div class="toolbar__budget">
             <label class="field field--budget">
               <span>이번 장보기 예산</span>
@@ -107,6 +93,22 @@
             <h2>장보기 리스트</h2>
           </div>
           <p id="cartMeta" class="panel__hint">0개 담김</p>
+        </div>
+        <div class="cart-panel__controls">
+          <div class="toolbar__history">
+            <div class="toolbar__history-fields">
+              <label class="field field--month">
+                <span>저장 월</span>
+                <select id="historyMonthSelect"></select>
+              </label>
+              <label class="field field--list">
+                <span>저장된 리스트</span>
+                <select id="shoppingListSelect"></select>
+              </label>
+              <button id="loadListBtn" class="btn btn-ghost toolbar__mini-btn" type="button">불러오기</button>
+              <button id="createListBtn" class="btn btn-ghost toolbar__mini-btn" type="button">이번 달 새 리스트</button>
+            </div>
+          </div>
         </div>
         <div id="cartList" class="cart-list"></div>
       </div>

@@ -275,8 +275,7 @@ p {
 
 .toolbar__controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 210px);
-  gap: 8px;
+  grid-template-columns: minmax(180px, 210px);
   height: 100%;
   justify-self: end;
   width: 100%;
@@ -518,6 +517,10 @@ p {
 .panel--cart {
   position: sticky;
   top: 20px;
+}
+
+.cart-panel__controls {
+  margin-bottom: 14px;
 }
 
 .panel__title {
@@ -840,7 +843,7 @@ p {
 
 @media (min-width: 1025px) {
   .toolbar {
-    grid-template-columns: minmax(240px, 1fr) minmax(360px, 420px) minmax(180px, 210px) repeat(4, minmax(98px, 124px));
+    grid-template-columns: minmax(240px, 1fr) minmax(180px, 210px) repeat(4, minmax(98px, 124px));
     align-items: stretch;
     justify-content: end;
     column-gap: 8px;
@@ -863,6 +866,10 @@ p {
   .toolbar__budget,
   .summary-card {
     align-self: stretch;
+  }
+
+  .panel--cart .toolbar__history-fields {
+    grid-template-columns: minmax(108px, 122px) minmax(140px, 1fr) auto auto;
   }
 }
 
@@ -890,6 +897,10 @@ p {
 
   .panel--cart {
     position: static;
+  }
+
+  .cart-panel__controls {
+    margin-bottom: 12px;
   }
 
   .summary__grid {
@@ -995,6 +1006,10 @@ p {
 
   .toolbar__history-fields {
     grid-template-columns: 1fr;
+  }
+
+  .cart-panel__controls {
+    margin-bottom: 10px;
   }
 
   .toolbar__intro {
