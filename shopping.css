@@ -356,8 +356,23 @@ p {
   flex: 0 0 auto;
   margin-bottom: 0;
   margin-left: auto;
-  grid-template-columns: 210px minmax(360px, 480px);
+  width: min(100%, 700px);
+  grid-template-columns: 170px minmax(0, 1fr);
   gap: 8px;
+}
+
+.panel--search .panel__header {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+}
+
+.panel--search .panel__title {
+  white-space: nowrap;
+}
+
+.panel--search .results-toolbar {
+  justify-self: end;
 }
 
 .panel__header .field {
