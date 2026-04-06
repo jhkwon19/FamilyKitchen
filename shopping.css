@@ -1243,6 +1243,10 @@ p {
     display: inline-flex;
   }
 
+  .panel--search {
+    display: none;
+  }
+
   .shopping-shell {
     padding: 0 0 36px;
   }
