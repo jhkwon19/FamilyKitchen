@@ -918,8 +918,14 @@ function renderCart() {
     cartItem.classList.toggle('is-checked', Boolean(item.checked));
     qty.value = String(item.qty);
     price.value = String(item.price_value || 0);
-    total.textContent = `소계 ${formatWon((item.price_value || 0) * item.qty)}`;
-    openLink.href = item.url || '#';
+    total.textContent = `수량 ${item.qty} · 예상가 ${formatWon(item.price_value || 0)} · 소계 ${formatWon((item.price_value || 0) * item.qty)}`;
+    if (item.url) {
+      openLink.href = item.url;
+      openLink.hidden = false;
+    } else {
+      openLink.removeAttribute('href');
+      openLink.hidden = true;
+    }
 
     check.addEventListener('change', async () => {
       item.checked = check.checked;
@@ -929,7 +935,7 @@ function renderCart() {
 
     qty.addEventListener('input', () => {
       item.qty = Math.max(1, Number(qty.value) || 1);
-      total.textContent = `소계 ${formatWon((item.price_value || 0) * item.qty)}`;
+      total.textContent = `수량 ${item.qty} · 예상가 ${formatWon(item.price_value || 0)} · 소계 ${formatWon((item.price_value || 0) * item.qty)}`;
       saveCart();
       renderSummary();
     });
@@ -942,7 +948,7 @@ function renderCart() {
     price.addEventListener('input', () => {
       item.price_value = Math.max(0, Number(price.value) || 0);
       item.price_text = formatWon(item.price_value);
-      total.textContent = `소계 ${formatWon((item.price_value || 0) * item.qty)}`;
+      total.textContent = `수량 ${item.qty} · 예상가 ${formatWon(item.price_value || 0)} · 소계 ${formatWon((item.price_value || 0) * item.qty)}`;
       saveCart();
       renderSummary();
     });
