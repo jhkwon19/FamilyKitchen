@@ -15,7 +15,6 @@ const productSyncStatus = document.getElementById('productSyncStatus');
 const historyMonthSelect = document.getElementById('historyMonthSelect');
 const shoppingListSelect = document.getElementById('shoppingListSelect');
 const saveListBtn = document.getElementById('saveListBtn');
-const saveAsNewListBtn = document.getElementById('saveAsNewListBtn');
 const deleteListBtn = document.getElementById('deleteListBtn');
 const checkModeBtn = document.getElementById('checkModeBtn');
 const manualItemForm = document.getElementById('manualItemForm');
@@ -186,12 +185,6 @@ function bindEvents() {
   if (saveListBtn) {
     saveListBtn.addEventListener('click', async () => {
       await saveCurrentShoppingList();
-    });
-  }
-
-  if (saveAsNewListBtn) {
-    saveAsNewListBtn.addEventListener('click', async () => {
-      await createShoppingListFromCurrentState();
     });
   }
 
