@@ -237,23 +237,22 @@ p {
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-  gap: 14px;
+  gap: 12px;
   padding: 16px 18px 18px 24px;
 }
 
 .toolbar__workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
 .toolbar__intro {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   align-content: start;
-  max-width: 260px;
+  max-width: 100%;
 }
 
 .toolbar__intro h2,
@@ -277,22 +276,26 @@ p {
   display: grid;
   gap: 10px;
   align-content: start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.56);
+  border: 1px solid rgba(138, 96, 68, 0.08);
 }
 
 .toolbar__search,
 .toolbar__budget {
   display: grid;
-  grid-template-columns: minmax(220px, 360px) auto;
+  grid-template-columns: minmax(0, 280px) auto;
   gap: 12px;
   align-items: end;
 }
 
 .field--search {
-  max-width: 360px;
+  max-width: 280px;
 }
 
 .field--budget {
-  max-width: 240px;
+  max-width: 220px;
 }
 
 .field,
@@ -351,6 +354,12 @@ p {
   justify-content: center;
 }
 
+.toolbar__controls .btn {
+  width: fit-content;
+  min-width: 0;
+  white-space: nowrap;
+}
+
 .btn-primary {
   background: linear-gradient(135deg, #c86643, #aa4c2f);
   color: #fff8f1;
@@ -377,8 +386,12 @@ p {
 
 .toolbar__summary {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   align-content: start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.56);
+  border: 1px solid rgba(138, 96, 68, 0.08);
 }
 
 .summary__header,
@@ -400,12 +413,12 @@ p {
 
 .summary__grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .summary-card {
-  padding: 10px 12px;
+  padding: 10px 11px;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(247, 237, 223, 0.8));
   border: 1px solid rgba(138, 96, 68, 0.12);
@@ -737,7 +750,6 @@ p {
 
 @media (max-width: 1024px) {
   .toolbar {
-    grid-template-columns: 1fr;
     gap: 14px;
   }
 
@@ -835,6 +847,14 @@ p {
   .toolbar__search,
   .toolbar__budget {
     grid-template-columns: 1fr;
+  }
+
+  .toolbar__controls,
+  .toolbar__summary {
+    padding: 0;
+    border: 0;
+    background: none;
+    border-radius: 0;
   }
 
   .summary__header,
