@@ -757,19 +757,22 @@ p {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  margin-left: auto;
   gap: 8px;
 }
 
 .cart-summary-inline {
   display: grid;
-  grid-template-columns: repeat(2, minmax(112px, 150px));
-  gap: 8px;
+  grid-template-columns: repeat(2, max-content);
+  gap: 14px;
   align-items: center;
+  justify-content: end;
 }
 
 .cart-summary-inline article {
   min-width: 0;
-  padding: 4px 6px;
+  padding: 4px 0;
+  text-align: right;
 }
 
 .cart-summary-inline span {
