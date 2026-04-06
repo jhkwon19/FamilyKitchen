@@ -866,6 +866,50 @@ def reset_shopping_list_items(list_id: str, db: Session = Depends(get_db)):
     return None
 
 
+@app.put("/api/shopping/lists/{list_id}/items", response_model=ShoppingListOut)
+def replace_shopping_list_items(list_id: str, payload: List[ShoppingItemIn], db: Session = Depends(get_db)):
+    shopping_list = db.get(ShoppingList, list_id)
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
+
+    db.query(ShoppingItem).filter(ShoppingItem.list_id == list_id).delete()
+    for index, item in enumerate(payload):
+        db.add(
+            ShoppingItem(
+                id=str(uuid.uuid4()),
+                list_id=list_id,
+                product_name=item.product_name.strip(),
+                product_url=item.product_url.strip() if item.product_url else None,
+                image_url=item.image_url.strip() if item.image_url else None,
+                costco_product_id=item.costco_product_id.strip() if item.costco_product_id else None,
+                quantity=item.quantity,
+                expected_price=item.expected_price,
+                price_text=item.price_text.strip() if item.price_text else None,
+                original_price=item.original_price,
+                original_price_text=item.original_price_text.strip() if item.original_price_text else None,
+                discount_amount=item.discount_amount,
+                discount_text=item.discount_text.strip() if item.discount_text else None,
+                discount_period_text=item.discount_period_text.strip() if item.discount_period_text else None,
+                member_only=item.member_only,
+                is_checked=item.is_checked,
+                checked_at=datetime.now(timezone.utc) if item.is_checked else None,
+                note=item.note.strip() if item.note else None,
+                sort_order=item.sort_order if item.sort_order else index,
+            )
+        )
+
+    db.commit()
+    updated = (
+        db.query(ShoppingList)
+        .options(selectinload(ShoppingList.items))
+        .filter(ShoppingList.id == list_id)
+        .first()
+    )
+    if not updated:
+        raise HTTPException(status_code=500, detail="Shopping list was not persisted")
+    return serialize_shopping_list(updated)
+
+
 @app.post("/api/shopping/lists/{list_id}/items", response_model=ShoppingItemOut)
 def create_shopping_item(list_id: str, payload: ShoppingItemIn, db: Session = Depends(get_db)):
     shopping_list = db.get(ShoppingList, list_id)

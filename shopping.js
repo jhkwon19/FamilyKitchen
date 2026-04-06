@@ -77,15 +77,11 @@ function bindEvents() {
       state.budget = Number(budgetInput.value) || 0;
       saveBudget();
       renderSummary();
-      queueBudgetSave();
     });
   }
 
   if (resetCartBtn) {
-    resetCartBtn.addEventListener('click', async () => {
-      if (state.currentListId) {
-        await request(`/api/shopping/lists/${state.currentListId}/items`, { method: 'DELETE' });
-      }
+    resetCartBtn.addEventListener('click', () => {
       state.cart = [];
       saveCart();
       render();
@@ -240,6 +236,8 @@ async function saveCurrentShoppingList() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ budget: state.budget }),
     });
+    const updated = await replaceCurrentShoppingListItems();
+    applyShoppingList(updated);
     return;
   }
 
@@ -493,7 +491,6 @@ function renderCart() {
       item.checked = check.checked;
       saveCart();
       renderSummary();
-      await persistCartItem(item, { is_checked: item.checked });
     });
 
     qty.addEventListener('input', () => {
@@ -504,7 +501,7 @@ function renderCart() {
     });
     qty.addEventListener('change', async () => {
       item.qty = Math.max(1, Number(qty.value) || 1);
-      await persistCartItem(item, { quantity: item.qty });
+      saveCart();
       render();
     });
 
@@ -518,10 +515,7 @@ function renderCart() {
     price.addEventListener('change', async () => {
       item.price_value = Math.max(0, Number(price.value) || 0);
       item.price_text = formatWon(item.price_value);
-      await persistCartItem(item, {
-        expected_price: item.price_value,
-        price_text: item.price_text,
-      });
+      saveCart();
       render();
     });
 
@@ -560,26 +554,6 @@ function renderSummary() {
 
 async function addToCart(item) {
   const existing = findExistingCartEntry(item);
-  if (state.currentListId) {
-    if (existing) {
-      existing.qty += 1;
-      saveCart();
-      render();
-      await persistCartItem(existing, { quantity: existing.qty });
-      return;
-    }
-
-    const created = await requestJson(`/api/shopping/lists/${state.currentListId}/items`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(serializeResultItemForRequest(item)),
-    });
-    state.cart.unshift(deserializeShoppingItem(created));
-    saveCart();
-    render();
-    return;
-  }
-
   if (existing) {
     existing.qty += 1;
   } else {
@@ -593,6 +567,12 @@ async function addToCart(item) {
       price_value: item.price_value || 0,
       price_text: item.price_text || '',
       costco_product_id: item.id || '',
+      original_price: item.original_price_value || null,
+      original_price_text: item.original_price_text || null,
+      discount_amount: item.discount_value || null,
+      discount_text: item.discount_text || null,
+      discount_period_text: item.discount_period_text || null,
+      member_only: Boolean(item.member_only),
     });
   }
 
@@ -600,38 +580,10 @@ async function addToCart(item) {
   render();
 }
 
-async function persistCartItem(item, payload) {
-  if (!state.currentListId) {
-    saveCart();
-    return;
-  }
-
-  const updated = await requestJson(`/api/shopping/items/${item.id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  syncCartEntry(updated);
-  saveCart();
-}
-
 async function removeCartItem(item) {
-  if (state.currentListId) {
-    await request(`/api/shopping/items/${item.id}`, { method: 'DELETE' });
-  }
   state.cart = state.cart.filter(entry => entry.id !== item.id);
   saveCart();
   render();
-}
-
-function syncCartEntry(payload) {
-  const next = deserializeShoppingItem(payload);
-  const index = state.cart.findIndex(entry => entry.id === next.id);
-  if (index >= 0) {
-    state.cart[index] = next;
-  } else {
-    state.cart.unshift(next);
-  }
 }
 
 function findExistingCartEntry(item) {
@@ -642,16 +594,13 @@ function findExistingCartEntry(item) {
   });
 }
 
-function queueBudgetSave() {
-  if (!state.currentListId) return;
-  window.clearTimeout(state.budgetSaveTimer);
-  state.budgetSaveTimer = window.setTimeout(async () => {
-    await requestJson(`/api/shopping/lists/${state.currentListId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ budget: state.budget }),
-    });
-  }, 280);
+async function replaceCurrentShoppingListItems() {
+  if (!state.currentListId) return null;
+  return requestJson(`/api/shopping/lists/${state.currentListId}/items`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state.cart.map((item, index) => serializeCartEntryForRequest(item, index))),
+  });
 }
 
 function updateListControlState() {
