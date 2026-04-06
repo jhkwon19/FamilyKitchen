@@ -442,7 +442,7 @@ function renderResults() {
     openLink.href = item.url;
     if (item.category_text) {
       category.hidden = false;
-      category.textContent = `카테고리 ${item.category_text}`;
+      category.textContent = item.category_text;
     } else {
       category.hidden = true;
       category.textContent = '';
