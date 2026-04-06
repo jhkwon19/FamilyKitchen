@@ -297,6 +297,10 @@ function renderCategoryPicker() {
         if (!hasChildren || state.browsingCategoryPath === node.key) return;
         state.browsingCategoryPath = node.key;
         renderCategoryPicker();
+        if (categoryPickerList) {
+          categoryPickerList.scrollTop = 0;
+          categoryPickerList.scrollLeft = categoryPickerList.scrollWidth;
+        }
       };
 
       row.addEventListener('mouseenter', () => {

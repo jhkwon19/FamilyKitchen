@@ -517,8 +517,7 @@ p {
   display: flex;
   gap: 8px;
   max-height: min(380px, calc(100vh - 210px));
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto;
   padding: 1px 1px 6px;
   align-items: flex-start;
 }
@@ -531,9 +530,6 @@ p {
   align-content: start;
   gap: 3px;
   padding: 0;
-  max-height: min(380px, calc(100vh - 210px));
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .category-picker__column:last-child {
