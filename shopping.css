@@ -249,10 +249,17 @@ p {
 }
 
 .toolbar__intro {
-  display: grid;
-  gap: 2px;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
   max-width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 252, 246, 0.95);
+  border: 1px solid var(--border);
+  min-height: 58px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .toolbar__intro h2,
@@ -269,11 +276,11 @@ p {
 }
 
 .toolbar__budget {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: 8px;
-  align-items: stretch;
-  padding: 9px 11px;
+  padding: 10px 12px;
   border-radius: 12px;
   background: rgba(255, 252, 246, 0.95);
   border: 1px solid var(--border);
@@ -291,7 +298,14 @@ p {
 
 .toolbar__action {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 252, 246, 0.95);
+  border: 1px solid var(--border);
+  min-height: 58px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .results-toolbar {
@@ -359,8 +373,8 @@ p {
 }
 
 .toolbar__controls .btn {
-  width: 152px;
-  min-width: 152px;
+  width: 100%;
+  min-width: 0;
   min-height: 40px;
   white-space: nowrap;
   align-self: stretch;
@@ -421,14 +435,15 @@ p {
 }
 
 .summary-card {
-  padding: 9px 11px;
+  padding: 10px 12px;
   border-radius: 12px;
   background: rgba(255, 252, 246, 0.95);
   border: 1px solid var(--border);
   min-height: 58px;
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: 3px;
-  align-content: start;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -693,7 +708,7 @@ p {
   line-height: 1.6;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
   .hero {
     padding: 8px 7vw 4px;
     align-items: flex-start;
@@ -752,9 +767,9 @@ p {
   }
 }
 
-@media (min-width: 1320px) {
+@media (min-width: 1025px) {
   .toolbar {
-    grid-template-columns: minmax(200px, 0.9fr) minmax(240px, 300px) 152px repeat(4, minmax(110px, 0.52fr));
+    grid-template-columns: minmax(210px, 1fr) 170px minmax(250px, 320px) repeat(4, minmax(120px, 0.7fr));
     align-items: stretch;
     column-gap: 10px;
     row-gap: 0;
@@ -769,13 +784,11 @@ p {
 
   .toolbar__intro {
     max-width: none;
-    align-self: center;
-  }
-
-  .toolbar__budget {
     align-self: stretch;
   }
 
+  .toolbar__action,
+  .toolbar__budget,
   .summary-card {
     align-self: stretch;
   }
@@ -887,11 +900,15 @@ p {
   }
 
   .toolbar__controls,
-  .toolbar__summary {
+  .toolbar__summary,
+  .toolbar__intro,
+  .toolbar__action {
     padding: 0;
     border: 0;
     background: none;
     border-radius: 0;
+    min-height: 0;
+    box-shadow: none;
   }
 
   .toolbar__controls .btn {
