@@ -19,29 +19,38 @@ const CART_STORAGE_KEY = 'costco-demo-cart-v1';
 const BUDGET_STORAGE_KEY = 'costco-demo-budget-v1';
 
 const state = {
-  catalog: [],
+  results: [],
   cart: loadCart(),
   budget: loadBudget(),
   fetchedAt: null,
+  matchedCount: 0,
+  totalCatalogCount: 0,
+  mode: 'featured',
 };
 
 if (budgetInput) {
   budgetInput.value = state.budget ? String(state.budget) : '';
 }
 
-loadCatalog();
+loadSearchResults();
 bindEvents();
 render();
 
 function bindEvents() {
   if (searchInput) {
-    searchInput.addEventListener('input', () => renderResults());
+    let searchTimer = null;
+    searchInput.addEventListener('input', () => {
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(() => {
+        loadSearchResults();
+      }, 220);
+    });
   }
 
   if (refreshCatalogBtn) {
     refreshCatalogBtn.addEventListener('click', async () => {
       refreshCatalogBtn.disabled = true;
-      await loadCatalog(true);
+      await loadSearchResults(true);
       refreshCatalogBtn.disabled = false;
     });
   }
@@ -63,25 +72,39 @@ function bindEvents() {
   }
 }
 
-async function loadCatalog(refresh = false) {
+async function loadSearchResults(refresh = false) {
+  const query = searchInput?.value || '';
   if (catalogStatus) {
-    catalogStatus.textContent = refresh ? '공식몰 샘플을 다시 불러오는 중입니다.' : '공식몰 샘플을 불러오는 중입니다.';
+    catalogStatus.textContent = refresh
+      ? '공식몰 검색 결과를 다시 불러오는 중입니다.'
+      : '공식몰 검색 결과를 불러오는 중입니다.';
   }
 
   try {
-    const url = refresh ? '/api/costco-demo/catalog?refresh=true' : '/api/costco-demo/catalog';
+    const params = new URLSearchParams({
+      q: query,
+      limit: '12',
+    });
+    if (refresh) params.set('refresh', 'true');
+    const url = `/api/costco-demo/search?${params.toString()}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error('카탈로그 응답 실패');
     const payload = await response.json();
-    state.catalog = Array.isArray(payload.items) ? payload.items : [];
+    state.results = Array.isArray(payload.items) ? payload.items : [];
     state.fetchedAt = payload.fetched_at;
+    state.totalCatalogCount = Number(payload.total_catalog_count) || 0;
+    state.matchedCount = Number(payload.matched_count) || 0;
+    state.mode = payload.mode || 'search';
     if (catalogStatus) {
-      catalogStatus.textContent = payload.sample_note || '공식몰 샘플 데이터를 불러왔습니다.';
+      catalogStatus.textContent = payload.sample_note || '공식몰 검색 결과를 불러왔습니다.';
     }
   } catch (error) {
-    state.catalog = [];
+    state.results = [];
+    state.totalCatalogCount = 0;
+    state.matchedCount = 0;
+    state.mode = 'error';
     if (catalogStatus) {
-      catalogStatus.textContent = '공식몰 샘플을 불러오지 못했습니다.';
+      catalogStatus.textContent = '공식몰 검색 데모를 불러오지 못했습니다.';
     }
   }
 
@@ -96,23 +119,23 @@ function render() {
 
 function renderResults() {
   if (!searchResults) return;
-
-  const keyword = normalize(searchInput?.value || '');
-  const results = state.catalog.filter(item => {
-    if (!keyword) return true;
-    return normalize([item.title, item.price_text, item.id].join(' ')).includes(keyword);
-  });
+  const query = searchInput?.value?.trim() || '';
+  const results = state.results;
 
   if (resultsMeta) {
     const syncedText = state.fetchedAt
       ? `최근 동기화 ${new Date(state.fetchedAt).toLocaleString('ko-KR')}`
       : '최근 동기화 기록 없음';
-    resultsMeta.textContent = `검색 결과 ${results.length}개 / 샘플 상품 ${state.catalog.length}개 · ${syncedText}`;
+    if (query) {
+      resultsMeta.textContent = `전체 상품 ${state.totalCatalogCount.toLocaleString('ko-KR')}개 중 ${state.matchedCount.toLocaleString('ko-KR')}개 매칭 · 현재 ${results.length}개 표시 · ${syncedText}`;
+    } else {
+      resultsMeta.textContent = `전체 상품 ${state.totalCatalogCount.toLocaleString('ko-KR')}개 기준 기본 노출 ${results.length}개 · ${syncedText}`;
+    }
   }
 
   searchResults.innerHTML = '';
   if (!results.length) {
-    searchResults.appendChild(buildEmptyState('검색 결과가 없습니다. 다른 키워드로 확인해보세요.'));
+    searchResults.appendChild(buildEmptyState(query ? '검색 결과가 없습니다. 영문 상품명이나 브랜드 키워드도 시도해보세요.' : '기본 노출 상품이 없습니다.'));
     return;
   }
 
@@ -131,7 +154,7 @@ function renderResults() {
     price.textContent = item.price_text || '가격 미노출';
     note.textContent = item.member_only
       ? '회원 전용 또는 홈페이지 노출 기준으로 가격 확인이 제한될 수 있습니다.'
-      : '공식몰 샘플 데이터 기준 예상 가격입니다.';
+      : '공식몰 검색 결과 기준 예상 가격입니다.';
     openLink.href = item.url;
 
     addBtn.addEventListener('click', () => addToCart(item));
@@ -148,7 +171,7 @@ function renderCart() {
   }
 
   if (!state.cart.length) {
-    cartList.appendChild(buildEmptyState('오른쪽 장보기 리스트는 브라우저에만 임시 저장됩니다. 샘플 상품에서 몇 개 담아보세요.'));
+    cartList.appendChild(buildEmptyState('오른쪽 장보기 리스트는 브라우저에만 임시 저장됩니다. 공식몰 검색 결과에서 몇 개 담아보세요.'));
     return;
   }
 

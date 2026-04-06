@@ -7,16 +7,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="costco-demo.css?v=1">
+  <link rel="stylesheet" href="costco-demo.css?v=2">
 </head>
 <body>
   <main class="demo-shell">
     <section class="hero">
       <p class="eyebrow">DB 없이 보는 샘플 페이지</p>
       <h1>코스트코 장보기 데모</h1>
-      <p class="lede">장보기 페이지 안에서 공식몰 상품 일부를 검색하고, 예산을 계산하고, 카트에 담은 항목을 체크하는 흐름만 먼저 검증하는 화면입니다.</p>
+      <p class="lede">장보기 페이지 안에서 코스트코 공식몰 검색 결과를 바로 불러오고, 전체 상품 수는 sitemap으로 확인해 예산 흐름을 검증하는 화면입니다.</p>
       <div class="hero__meta">
-        <span class="chip">공식몰 샘플 연동</span>
+        <span class="chip">공식몰 검색 연동</span>
         <span class="chip">localStorage 저장</span>
         <span class="chip">기존 레시피 페이지와 분리</span>
       </div>
@@ -26,9 +26,9 @@
       <div class="toolbar__search">
         <label class="field">
           <span>상품 검색</span>
-          <input id="searchInput" type="search" placeholder="예: 식초, 청바지, 다이슨">
+          <input id="searchInput" type="search" placeholder="예: dyson, vinegar, 청바지">
         </label>
-        <button id="refreshCatalogBtn" class="btn btn-secondary" type="button">공식몰 샘플 새로고침</button>
+        <button id="refreshCatalogBtn" class="btn btn-secondary" type="button">공식몰 결과 새로고침</button>
       </div>
       <div class="toolbar__budget">
         <label class="field">
@@ -62,10 +62,11 @@
       <div class="panel">
         <div class="panel__header">
           <div>
-            <p class="eyebrow">공식몰 샘플 상품</p>
+            <p class="eyebrow">공식몰 검색 결과</p>
+            
             <h2>검색 결과</h2>
           </div>
-          <p id="catalogStatus" class="panel__hint">공식몰 샘플을 불러오는 중입니다.</p>
+          <p id="catalogStatus" class="panel__hint">공식몰 검색 데이터를 불러오는 중입니다.</p>
         </div>
         <div id="resultsMeta" class="results-meta"></div>
         <div id="searchResults" class="product-grid"></div>
@@ -129,6 +130,6 @@
     </article>
   </template>
 
-  <script src="costco-demo.js?v=1" type="module"></script>
+  <script src="costco-demo.js?v=2" type="module"></script>
 </body>
 </html>
