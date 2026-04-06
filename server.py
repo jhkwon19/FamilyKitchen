@@ -1577,7 +1577,8 @@ def _build_costco_category_tree(entries: List[dict]) -> List[dict]:
     root_nodes = {}
 
     for entry in entries:
-        parts = (entry.get("category_path") or "").split("/")
+        category_path = entry.get("category_path") or _costco_url_to_category_path(entry.get("url", ""))
+        parts = category_path.split("/")
         parts = [part for part in parts if part]
         if not parts or parts[0] not in COSTCO_CATEGORY_ROOTS:
             continue
@@ -1849,7 +1850,10 @@ def _matches_costco_category(item: dict, category: str) -> bool:
     if not category:
         return True
     category_path = category.strip().strip("/")
-    item_path = (item.get("category_path") or item.get("category_key") or "").strip().strip("/")
+    item_path = item.get("category_path") or ""
+    if not item_path and item.get("url"):
+        item_path = _costco_url_to_category_path(item["url"])
+    item_path = (item_path or item.get("category_key") or "").strip().strip("/")
     return item_path == category_path or item_path.startswith(f"{category_path}/")
 
 

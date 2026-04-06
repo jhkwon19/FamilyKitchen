@@ -679,9 +679,15 @@ p {
   padding: 22px 22px 24px 30px;
 }
 
+.panel--search {
+  overflow: visible;
+  z-index: 5;
+}
+
 .panel--cart {
   position: sticky;
   top: 20px;
+  z-index: 1;
 }
 
 .cart-panel__controls {
