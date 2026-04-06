@@ -201,7 +201,7 @@ async function loadSavedListsForSelectedMonth({ autoLoad = false, preferredListI
   state.savedLists.forEach(item => {
     const option = document.createElement('option');
     option.value = item.id;
-    option.textContent = `${item.title} · ${formatDateTime(item.updated_at || item.created_at)} · ${item.item_count}개`;
+    option.textContent = item.title;
     shoppingListSelect.appendChild(option);
   });
   shoppingListSelect.disabled = false;
@@ -246,8 +246,11 @@ async function saveCurrentShoppingList() {
 
 async function createShoppingListFromCurrentState() {
   const selected = getSelectedHistoryMonth() || getCurrentYearMonth();
+  const nextSequence = state.savedLists.filter(item => (
+    Number(item.target_year) === selected.year && Number(item.target_month) === selected.month
+  )).length + 1;
   const payload = {
-    title: `${selected.year}년 ${selected.month}월 코스트코 장보기 ${formatDateTime(new Date().toISOString())}`,
+    title: `${formatDateTimeWithSeconds(new Date())} #${nextSequence}`,
     target_year: selected.year,
     target_month: selected.month,
     budget: state.budget || 0,
@@ -745,6 +748,18 @@ function formatDateTime(value) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function formatDateTimeWithSeconds(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '날짜 없음';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  const second = String(date.getSeconds()).padStart(2, '0');
+  return `${year}.${month}.${day} ${hour}:${minute}:${second}`;
 }
 
 async function requestJson(url, options = {}) {
