@@ -974,16 +974,28 @@ function loadCart() {
 }
 
 function saveCart() {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state.cart));
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state.cart));
+  } catch (error) {
+    // DB 저장 기능이 주 저장소이므로 localStorage 차단 시에도 화면 동작은 유지한다.
+  }
 }
 
 function loadBudget() {
-  const raw = localStorage.getItem(BUDGET_STORAGE_KEY);
-  return raw ? Number(raw) || 0 : 0;
+  try {
+    const raw = localStorage.getItem(BUDGET_STORAGE_KEY);
+    return raw ? Number(raw) || 0 : 0;
+  } catch (error) {
+    return 0;
+  }
 }
 
 function saveBudget() {
-  localStorage.setItem(BUDGET_STORAGE_KEY, String(state.budget || 0));
+  try {
+    localStorage.setItem(BUDGET_STORAGE_KEY, String(state.budget || 0));
+  } catch (error) {
+    // localStorage가 막혀도 DB 기반 장보기 흐름은 계속 사용할 수 있다.
+  }
 }
 
 function normalize(value) {
