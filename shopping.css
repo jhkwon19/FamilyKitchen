@@ -753,6 +753,17 @@ p {
   z-index: 1;
 }
 
+.panel--cart::before {
+  width: 12px;
+  background: linear-gradient(180deg, #d67d55, #bb5c3d);
+  z-index: 1;
+}
+
+.panel--cart > * {
+  position: relative;
+  z-index: 2;
+}
+
 .cart-panel__status {
   display: flex;
   align-items: center;
