@@ -52,6 +52,41 @@
       box-shadow: var(--shadow);
     }
 
+    .workspace-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .workspace-nav__link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(91, 66, 45, 0.14);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .workspace-nav__link:hover {
+      transform: translateY(-1px);
+      border-color: rgba(182, 95, 53, 0.24);
+      box-shadow: 0 10px 20px rgba(68, 41, 24, 0.08);
+    }
+
+    .workspace-nav__link.is-active {
+      color: #fff9f5;
+      border-color: rgba(182, 95, 53, 0.5);
+      background: linear-gradient(135deg, #cf7b4c, var(--shopping));
+      box-shadow: 0 12px 24px rgba(182, 95, 53, 0.18);
+    }
+
     .eyebrow {
       margin: 0 0 8px;
       font-size: 12px;
@@ -241,6 +276,17 @@
         padding: 24px;
       }
 
+      .workspace-nav {
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+
+      .workspace-nav__link {
+        min-height: 34px;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+
       .cards {
         grid-template-columns: 1fr;
       }
@@ -263,6 +309,11 @@
 <body>
   <main class="shell">
     <section class="hero">
+      <nav class="workspace-nav" aria-label="주요 메뉴">
+        <a class="workspace-nav__link is-active" href="/" aria-current="page">메인</a>
+        <a class="workspace-nav__link" href="/recipes">레시피</a>
+        <a class="workspace-nav__link" href="/shopping">장보기</a>
+      </nav>
       <p class="eyebrow">Family Kitchen</p>
       <h1>필요한 기능을 골라 들어가요.</h1>
       <p class="lede">지금 프로젝트는 레시피를 저장하고 다시 꺼내보는 공간과, 코스트코 장보기 예산을 짜고 실제 구매 진행을 체크하는 공간으로 나뉘어 있습니다. 메인에서 바로 목적에 맞는 화면으로 들어갈 수 있게 정리했습니다.</p>
@@ -280,7 +331,7 @@
         </div>
         <div class="card__footer">
           <p class="card__hint">기존 레시피 관리 화면으로 이동</p>
-          <a class="btn btn--recipe" href="/pc">레시피 보러가기</a>
+          <a class="btn btn--recipe" href="/recipes">레시피 보러가기</a>
         </div>
       </article>
 
@@ -295,12 +346,12 @@
         </div>
         <div class="card__footer">
           <p class="card__hint">장보기 데모 화면으로 이동</p>
-          <a class="btn btn--shopping" href="/costco-demo">장보기 보러가기</a>
+          <a class="btn btn--shopping" href="/shopping">장보기 보러가기</a>
         </div>
       </article>
     </section>
 
-    <p class="subnote">레시피 모바일 화면은 기존처럼 <a href="/m">/m</a> 경로에서 바로 열 수 있습니다.</p>
+    <p class="subnote">직접 경로가 필요하면 레시피는 <a href="/pc">/pc</a>, 모바일은 <a href="/m">/m</a>, 장보기는 <a href="/costco-demo">/costco-demo</a>에서도 바로 열 수 있습니다.</p>
   </main>
 </body>
 </html>

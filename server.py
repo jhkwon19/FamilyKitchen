@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple, Union
 from urllib.parse import quote_plus, urljoin, urlparse, unquote
 import re
 
-from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
@@ -1128,6 +1128,11 @@ def costco_demo_page():
     return FileResponse(BASE_DIR / "costco-demo.html")
 
 
+@app.get("/shopping")
+def shopping_page():
+    return FileResponse(BASE_DIR / "costco-demo.html")
+
+
 @app.get("/pc")
 def pc_page():
     return FileResponse(BASE_DIR / "pc.html")
@@ -1136,6 +1141,17 @@ def pc_page():
 @app.get("/m")
 def mobile_page():
     return FileResponse(BASE_DIR / "m.html")
+
+
+def _is_mobile_request(request: Request) -> bool:
+    user_agent = request.headers.get("user-agent", "").lower()
+    mobile_tokens = ("iphone", "android", "mobile", "ipad", "ipod")
+    return any(token in user_agent for token in mobile_tokens)
+
+
+@app.get("/recipes")
+def recipes_page(request: Request):
+    return FileResponse(BASE_DIR / ("m.html" if _is_mobile_request(request) else "pc.html"))
 
 
 @app.get("/")

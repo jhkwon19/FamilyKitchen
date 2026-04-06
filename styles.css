@@ -59,6 +59,43 @@ h1, h2, h3 {
 }
 p { margin: 0; }
 
+.workspace-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.workspace-nav__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(119, 74, 45, 0.14);
+  background: rgba(255, 252, 247, 0.82);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.18s ease, box-shadow 0.2s ease, color 0.18s ease;
+}
+
+.workspace-nav__link:hover {
+  transform: translateY(-1px);
+  color: var(--text);
+  border-color: rgba(181, 84, 52, 0.28);
+  box-shadow: 0 10px 18px rgba(104, 62, 35, 0.08);
+}
+
+.workspace-nav__link.is-active {
+  color: #fffaf5;
+  border-color: rgba(181, 84, 52, 0.6);
+  background: linear-gradient(135deg, #c56a47, var(--accent-deep));
+  box-shadow: 0 12px 24px rgba(104, 62, 35, 0.16);
+}
+
 .hero {
   display: flex;
   justify-content: space-between;
@@ -1023,6 +1060,15 @@ html[data-variant="mobile"] body {
   .hero__content {
     padding: 16px 18px 14px 24px;
     border-radius: 16px;
+  }
+  .workspace-nav {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .workspace-nav__link {
+    min-height: 34px;
+    padding: 8px 12px;
+    font-size: 12px;
   }
   .hero h1 {
     font-size: clamp(22px, 6.8vw, 28px);
