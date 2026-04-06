@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/shopping.css?v=26">
+  <link rel="stylesheet" href="/shopping.css?v=27">
 </head>
 <body>
   <main class="shopping-shell">
@@ -86,8 +86,8 @@
               <button id="categoryPickerBtn" class="category-picker__button" type="button" aria-expanded="false" aria-controls="categoryPickerPanel">전체</button>
             </label>
           </div>
-          <button id="refreshCatalogBtn" class="btn btn-primary" type="button">공식몰 결과 새로고침</button>
         </div>
+        <div id="productSyncStatus" class="sync-status">상품 DB 동기화 상태를 확인하는 중입니다.</div>
         <div id="resultsMeta" class="results-meta"></div>
         <div id="searchResults" class="product-grid"></div>
         <button id="loadMoreResultsBtn" class="btn btn-ghost results-more" type="button" hidden>더 보기</button>
@@ -187,6 +187,6 @@
     </article>
   </template>
 
-  <script src="/shopping.js?v=29"></script>
+  <script src="/shopping.js?v=30"></script>
 </body>
 </html>

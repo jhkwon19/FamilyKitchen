@@ -10,8 +10,8 @@ const categoryPickerTrail = document.getElementById('categoryPickerTrail');
 const categoryPickerList = document.getElementById('categoryPickerList');
 const categoryPickerCloseBtn = document.getElementById('categoryPickerCloseBtn');
 const categoryClearBtn = document.getElementById('categoryClearBtn');
-const refreshCatalogBtn = document.getElementById('refreshCatalogBtn');
 const loadMoreResultsBtn = document.getElementById('loadMoreResultsBtn');
+const productSyncStatus = document.getElementById('productSyncStatus');
 const budgetInput = document.getElementById('budgetInput');
 const resetCartBtn = document.getElementById('resetCartBtn');
 const historyMonthSelect = document.getElementById('historyMonthSelect');
@@ -58,6 +58,7 @@ const state = {
   mode: 'featured',
   hasMoreResults: false,
   resultQueryKey: '',
+  productSync: null,
   historyMonths: [],
   savedLists: [],
   currentListId: null,
@@ -90,6 +91,8 @@ async function boot() {
   render();
   loadHistoryMonths().then(() => render()).catch(() => render());
   loadCategoryTree().catch(() => renderCategoryFilters());
+  loadProductSyncStatus();
+  window.setInterval(loadProductSyncStatus, 30000);
   loadSearchResults().catch(() => renderResults());
 }
 
@@ -101,14 +104,6 @@ function bindEvents() {
       searchTimer = window.setTimeout(() => {
         loadSearchResults();
       }, 220);
-    });
-  }
-
-  if (refreshCatalogBtn) {
-    refreshCatalogBtn.addEventListener('click', async () => {
-      refreshCatalogBtn.disabled = true;
-      await loadSearchResults(true);
-      refreshCatalogBtn.disabled = false;
     });
   }
 
@@ -728,6 +723,32 @@ async function loadSearchResults(refresh = false, append = false) {
   }
 
   renderResults();
+}
+
+async function loadProductSyncStatus() {
+  if (!productSyncStatus) return;
+  try {
+    const payload = await requestJson('/api/shopping/products/status', { timeoutMs: 6000 });
+    state.productSync = payload;
+    renderProductSyncStatus();
+  } catch (error) {
+    productSyncStatus.textContent = '상품 DB 동기화 상태를 확인하지 못했습니다.';
+  }
+}
+
+function renderProductSyncStatus() {
+  if (!productSyncStatus || !state.productSync) return;
+  const total = Number(state.productSync.total_count) || 0;
+  const synced = Number(state.productSync.synced_count) || 0;
+  const priced = Number(state.productSync.priced_count) || 0;
+  const images = Number(state.productSync.image_count) || 0;
+  const latest = state.productSync.latest_synced_at
+    ? ` · 최근 갱신 ${new Date(state.productSync.latest_synced_at).toLocaleString('ko-KR')}`
+    : '';
+
+  productSyncStatus.textContent = total
+    ? `상품 DB 동기화 ${synced.toLocaleString('ko-KR')} / ${total.toLocaleString('ko-KR')} · 가격 ${priced.toLocaleString('ko-KR')} · 이미지 ${images.toLocaleString('ko-KR')}${latest}`
+    : '상품 DB를 동기화하는 중입니다.';
 }
 
 function renderResults() {

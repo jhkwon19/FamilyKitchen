@@ -336,10 +336,10 @@ p {
 
 .results-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
   gap: 12px;
   align-items: end;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .category-filter {
@@ -639,13 +639,6 @@ p {
   white-space: nowrap;
 }
 
-.results-toolbar .btn {
-  width: 164px;
-  min-width: 164px;
-  min-height: 42px;
-  white-space: nowrap;
-}
-
 .btn-primary {
   background: linear-gradient(135deg, #c86643, #aa4c2f);
   color: #fff8f1;
@@ -756,9 +749,19 @@ p {
 }
 
 .panel__hint,
-.results-meta {
+.results-meta,
+.sync-status {
   color: var(--muted);
   font-size: 13px;
+}
+
+.sync-status {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(138, 96, 68, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 249, 241, 0.72);
+  line-height: 1.45;
 }
 
 .results-meta {
