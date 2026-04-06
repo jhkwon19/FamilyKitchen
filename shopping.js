@@ -17,6 +17,7 @@ const shoppingListSelect = document.getElementById('shoppingListSelect');
 const saveListBtn = document.getElementById('saveListBtn');
 const saveAsNewListBtn = document.getElementById('saveAsNewListBtn');
 const deleteListBtn = document.getElementById('deleteListBtn');
+const checkModeBtn = document.getElementById('checkModeBtn');
 const searchResults = document.getElementById('searchResults');
 const cartList = document.getElementById('cartList');
 const cartMeta = document.getElementById('cartMeta');
@@ -30,6 +31,7 @@ const CART_STORAGE_KEY = 'shopping-cart-v1';
 const BUDGET_STORAGE_KEY = 'shopping-budget-v1';
 const REQUEST_TIMEOUT_MS = 12000;
 const SEARCH_RESULT_PAGE_SIZE = 120;
+const CHECK_MODE_MAX_WIDTH = 720;
 const PLACEHOLDER_SVG = [
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">',
   '<defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">',
@@ -69,6 +71,7 @@ const state = {
   categoryLoading: false,
   categoryCloseTimer: null,
   categoryBrowseTimer: null,
+  checkMode: false,
 };
 
 bindEvents();
@@ -204,6 +207,20 @@ function bindEvents() {
       await deleteSelectedShoppingList();
     });
   }
+
+  if (checkModeBtn) {
+    checkModeBtn.addEventListener('click', () => {
+      if (!isMobileCheckModeAllowed()) return;
+      state.checkMode = !state.checkMode;
+      render();
+    });
+  }
+  window.addEventListener('resize', () => {
+    if (state.checkMode && !isMobileCheckModeAllowed()) {
+      state.checkMode = false;
+      render();
+    }
+  });
 }
 
 async function loadCategoryTree() {
@@ -635,10 +652,27 @@ function clearActiveShoppingList() {
 }
 
 function render() {
+  renderCheckMode();
   renderResults();
   renderCart();
   renderSummary();
   updateListControlState();
+}
+
+function renderCheckMode() {
+  const allowed = isMobileCheckModeAllowed();
+  if (!allowed && state.checkMode) {
+    state.checkMode = false;
+  }
+  document.body.classList.toggle('is-check-mode', state.checkMode);
+  if (!checkModeBtn) return;
+  checkModeBtn.hidden = !allowed;
+  checkModeBtn.setAttribute('aria-pressed', state.checkMode ? 'true' : 'false');
+  checkModeBtn.textContent = state.checkMode ? '일반 모드' : '체크 모드';
+}
+
+function isMobileCheckModeAllowed() {
+  return window.matchMedia(`(max-width: ${CHECK_MODE_MAX_WIDTH}px)`).matches;
 }
 
 async function loadSearchResults(refresh = false, append = false) {

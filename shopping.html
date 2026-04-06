@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/shopping.css?v=33">
+  <link rel="stylesheet" href="/shopping.css?v=35">
 </head>
 <body>
   <main class="shopping-shell">
@@ -82,7 +82,10 @@
             <p class="eyebrow">실사용 흐름 검증</p>
             <h2>장보기 리스트</h2>
           </div>
-          <p id="cartMeta" class="panel__hint">0개 담김</p>
+          <div class="cart-panel__status">
+            <p id="cartMeta" class="panel__hint">0개 담김</p>
+            <button id="checkModeBtn" class="btn btn-ghost toolbar__mini-btn" type="button" aria-pressed="false">체크 모드</button>
+          </div>
         </div>
         <div class="cart-panel__controls">
           <div class="toolbar__history">
@@ -170,6 +173,6 @@
     </article>
   </template>
 
-  <script src="/shopping.js?v=36"></script>
+  <script src="/shopping.js?v=38"></script>
 </body>
 </html>
