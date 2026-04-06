@@ -711,13 +711,25 @@ function renderProductSyncStatus() {
   const priced = Number(state.productSync.priced_count) || 0;
   const images = Number(state.productSync.image_count) || 0;
   const discounts = Number(state.productSync.discount_count) || 0;
-  const latest = state.productSync.latest_synced_at
-    ? ` · 최근 갱신 ${new Date(state.productSync.latest_synced_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
+  const latestText = state.productSync.latest_synced_at
+    ? `최근 갱신 ${new Date(state.productSync.latest_synced_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
     : '';
 
-  productSyncStatus.textContent = total
-    ? `상품 DB 동기화 ${synced.toLocaleString('ko-KR')} / ${total.toLocaleString('ko-KR')} · 가격 ${priced.toLocaleString('ko-KR')} · 할인 ${discounts.toLocaleString('ko-KR')} · 이미지 ${images.toLocaleString('ko-KR')}${latest}`
-    : '상품 DB를 동기화하는 중입니다.';
+  if (!total) {
+    productSyncStatus.textContent = '상품 DB를 동기화하는 중입니다.';
+    return;
+  }
+
+  productSyncStatus.replaceChildren();
+  const summaryLine = document.createElement('span');
+  summaryLine.textContent = `상품 DB 동기화 ${synced.toLocaleString('ko-KR')} / ${total.toLocaleString('ko-KR')} · 가격 ${priced.toLocaleString('ko-KR')} · 할인 ${discounts.toLocaleString('ko-KR')} · 이미지 ${images.toLocaleString('ko-KR')}`;
+  productSyncStatus.appendChild(summaryLine);
+  if (latestText) {
+    const latestLine = document.createElement('span');
+    latestLine.className = 'sync-status__latest';
+    latestLine.textContent = latestText;
+    productSyncStatus.appendChild(latestLine);
+  }
 }
 
 function renderResults() {

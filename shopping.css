@@ -722,6 +722,14 @@ p {
   line-height: 1.45;
 }
 
+.sync-status span {
+  display: block;
+}
+
+.sync-status__latest {
+  margin-top: 2px;
+}
+
 .results-meta {
   margin-bottom: 14px;
   line-height: 1.5;
