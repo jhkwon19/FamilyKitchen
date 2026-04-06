@@ -405,7 +405,7 @@ def serialize_shopping_item(item: ShoppingItem) -> ShoppingItemOut:
     )
 
 
-def _shopping_list_totals(shopping_list: ShoppingList) -> tuple[int, int, int, int]:
+def _shopping_list_totals(shopping_list: ShoppingList) -> Tuple[int, int, int, int]:
     item_count = len(shopping_list.items)
     checked_count = sum(1 for item in shopping_list.items if item.is_checked)
     estimated_total = sum((item.expected_price or 0) * max(item.quantity or 1, 1) for item in shopping_list.items)
