@@ -235,7 +235,7 @@ p {
 
 .toolbar,
 .summary {
-  margin: 0 7vw 22px;
+  margin: 0 7vw 12px;
 }
 
 .toolbar {
@@ -409,7 +409,7 @@ p {
 .layout {
   padding: 0 7vw 64px;
   display: grid;
-  gap: 22px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
   align-items: start;
 }
@@ -772,12 +772,12 @@ p {
 
   .toolbar,
   .summary {
-    margin: 0 16px 18px;
+    margin: 0 16px 12px;
   }
 
   .layout {
     padding: 0 16px 32px;
-    gap: 18px;
+    gap: 12px;
   }
 
   .toolbar,
