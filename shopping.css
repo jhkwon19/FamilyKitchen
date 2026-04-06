@@ -275,10 +275,31 @@ p {
 
 .toolbar__controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 210px);
+  gap: 8px;
   height: 100%;
   justify-self: end;
   width: 100%;
+}
+
+.toolbar__history {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 252, 246, 0.95);
+  border: 1px solid var(--border);
+  min-height: 54px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.toolbar__history-fields {
+  display: grid;
+  grid-template-columns: minmax(108px, 122px) minmax(150px, 1fr) auto auto;
+  gap: 8px;
+  align-items: end;
 }
 
 .toolbar__budget {
@@ -296,6 +317,14 @@ p {
 
 .field--search {
   max-width: 280px;
+}
+
+.field--month {
+  max-width: 122px;
+}
+
+.field--list {
+  max-width: none;
 }
 
 .field--budget {
@@ -327,6 +356,7 @@ p {
 }
 
 .field input,
+.field select,
 .mini-field input {
   width: 100%;
   border: 1px solid var(--border);
@@ -344,6 +374,7 @@ p {
 }
 
 .field input:focus,
+.field select:focus,
 .mini-field input:focus {
   outline: none;
   border-color: rgba(181, 84, 52, 0.45);
@@ -381,6 +412,13 @@ p {
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.toolbar__mini-btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .results-toolbar .btn {
@@ -802,7 +840,7 @@ p {
 
 @media (min-width: 1025px) {
   .toolbar {
-    grid-template-columns: minmax(260px, 1fr) minmax(180px, 210px) repeat(4, minmax(106px, 132px));
+    grid-template-columns: minmax(240px, 1fr) minmax(360px, 420px) minmax(180px, 210px) repeat(4, minmax(98px, 124px));
     align-items: stretch;
     justify-content: end;
     column-gap: 8px;
@@ -821,6 +859,7 @@ p {
     align-self: stretch;
   }
 
+  .toolbar__history,
   .toolbar__budget,
   .summary-card {
     align-self: stretch;
@@ -839,6 +878,10 @@ p {
   .toolbar__controls {
     grid-template-columns: 1fr;
     justify-self: stretch;
+  }
+
+  .toolbar__history-fields {
+    grid-template-columns: 1fr 1fr;
   }
 
   .layout {
@@ -948,6 +991,10 @@ p {
     width: 100%;
     min-width: 0;
     align-self: stretch;
+  }
+
+  .toolbar__history-fields {
+    grid-template-columns: 1fr;
   }
 
   .toolbar__intro {

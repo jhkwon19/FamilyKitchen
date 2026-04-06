@@ -206,6 +206,15 @@ class ShoppingListIn(ShoppingListBase):
     items: List[ShoppingItemIn] = Field(default_factory=list)
 
 
+class ShoppingListUpdateIn(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=255)
+    target_year: Optional[int] = Field(default=None, ge=2000, le=2100)
+    target_month: Optional[int] = Field(default=None, ge=1, le=12)
+    budget: Optional[int] = Field(default=None, ge=0)
+    status: Optional[str] = Field(default=None, max_length=24)
+    notes: Optional[str] = None
+
+
 class ShoppingListOut(ShoppingListBase):
     id: str
     source_list_id: Optional[str] = None
@@ -236,6 +245,25 @@ class ShoppingHistoryMonthOut(BaseModel):
     target_month: int
     list_count: int
     latest_updated_at: datetime
+
+
+class ShoppingItemUpdateIn(BaseModel):
+    product_name: Optional[str] = Field(default=None, max_length=255)
+    product_url: Optional[str] = None
+    image_url: Optional[str] = None
+    costco_product_id: Optional[str] = Field(default=None, max_length=64)
+    quantity: Optional[int] = Field(default=None, ge=1)
+    expected_price: Optional[int] = Field(default=None, ge=0)
+    price_text: Optional[str] = Field(default=None, max_length=64)
+    original_price: Optional[int] = Field(default=None, ge=0)
+    original_price_text: Optional[str] = Field(default=None, max_length=64)
+    discount_amount: Optional[int] = Field(default=None, ge=0)
+    discount_text: Optional[str] = Field(default=None, max_length=64)
+    discount_period_text: Optional[str] = Field(default=None, max_length=64)
+    member_only: Optional[bool] = None
+    is_checked: Optional[bool] = None
+    note: Optional[str] = None
+    sort_order: Optional[int] = Field(default=None, ge=0)
 
 
 RecipeIn.update_forward_refs()
@@ -783,6 +811,143 @@ def create_shopping_list(payload: ShoppingListIn, db: Session = Depends(get_db))
     if not created:
         raise HTTPException(status_code=500, detail="Shopping list was not persisted")
     return serialize_shopping_list(created)
+
+
+@app.patch("/api/shopping/lists/{list_id}", response_model=ShoppingListOut)
+def update_shopping_list(list_id: str, payload: ShoppingListUpdateIn, db: Session = Depends(get_db)):
+    shopping_list = (
+        db.query(ShoppingList)
+        .options(selectinload(ShoppingList.items))
+        .filter(ShoppingList.id == list_id)
+        .first()
+    )
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
+
+    if payload.title is not None:
+        shopping_list.title = payload.title.strip()
+    if payload.target_year is not None:
+        shopping_list.target_year = payload.target_year
+    if payload.target_month is not None:
+        shopping_list.target_month = payload.target_month
+    if payload.budget is not None:
+        shopping_list.budget = payload.budget
+    if payload.notes is not None:
+        shopping_list.notes = payload.notes.strip() if payload.notes else None
+    if payload.status is not None:
+        shopping_list.status = normalize_shopping_list_status(payload.status)
+        shopping_list.completed_at = datetime.now(timezone.utc) if shopping_list.status == "done" else None
+
+    db.add(shopping_list)
+    db.commit()
+    db.refresh(shopping_list)
+    return serialize_shopping_list(shopping_list)
+
+
+@app.delete("/api/shopping/lists/{list_id}/items", status_code=204)
+def reset_shopping_list_items(list_id: str, db: Session = Depends(get_db)):
+    shopping_list = db.get(ShoppingList, list_id)
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
+
+    db.query(ShoppingItem).filter(ShoppingItem.list_id == list_id).delete()
+    db.commit()
+    return None
+
+
+@app.post("/api/shopping/lists/{list_id}/items", response_model=ShoppingItemOut)
+def create_shopping_item(list_id: str, payload: ShoppingItemIn, db: Session = Depends(get_db)):
+    shopping_list = db.get(ShoppingList, list_id)
+    if not shopping_list:
+        raise HTTPException(status_code=404, detail="Shopping list not found")
+
+    max_sort_order = (
+        db.query(func.max(ShoppingItem.sort_order))
+        .filter(ShoppingItem.list_id == list_id)
+        .scalar()
+    )
+    item = ShoppingItem(
+        id=str(uuid.uuid4()),
+        list_id=list_id,
+        product_name=payload.product_name.strip(),
+        product_url=payload.product_url.strip() if payload.product_url else None,
+        image_url=payload.image_url.strip() if payload.image_url else None,
+        costco_product_id=payload.costco_product_id.strip() if payload.costco_product_id else None,
+        quantity=payload.quantity,
+        expected_price=payload.expected_price,
+        price_text=payload.price_text.strip() if payload.price_text else None,
+        original_price=payload.original_price,
+        original_price_text=payload.original_price_text.strip() if payload.original_price_text else None,
+        discount_amount=payload.discount_amount,
+        discount_text=payload.discount_text.strip() if payload.discount_text else None,
+        discount_period_text=payload.discount_period_text.strip() if payload.discount_period_text else None,
+        member_only=payload.member_only,
+        is_checked=payload.is_checked,
+        checked_at=datetime.now(timezone.utc) if payload.is_checked else None,
+        note=payload.note.strip() if payload.note else None,
+        sort_order=(max_sort_order + 1) if max_sort_order is not None and payload.sort_order == 0 else payload.sort_order,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return serialize_shopping_item(item)
+
+
+@app.patch("/api/shopping/items/{item_id}", response_model=ShoppingItemOut)
+def update_shopping_item(item_id: str, payload: ShoppingItemUpdateIn, db: Session = Depends(get_db)):
+    item = db.get(ShoppingItem, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Shopping item not found")
+
+    if payload.product_name is not None:
+        item.product_name = payload.product_name.strip()
+    if payload.product_url is not None:
+        item.product_url = payload.product_url.strip() if payload.product_url else None
+    if payload.image_url is not None:
+        item.image_url = payload.image_url.strip() if payload.image_url else None
+    if payload.costco_product_id is not None:
+        item.costco_product_id = payload.costco_product_id.strip() if payload.costco_product_id else None
+    if payload.quantity is not None:
+        item.quantity = payload.quantity
+    if payload.expected_price is not None:
+        item.expected_price = payload.expected_price
+    if payload.price_text is not None:
+        item.price_text = payload.price_text.strip() if payload.price_text else None
+    if payload.original_price is not None:
+        item.original_price = payload.original_price
+    if payload.original_price_text is not None:
+        item.original_price_text = payload.original_price_text.strip() if payload.original_price_text else None
+    if payload.discount_amount is not None:
+        item.discount_amount = payload.discount_amount
+    if payload.discount_text is not None:
+        item.discount_text = payload.discount_text.strip() if payload.discount_text else None
+    if payload.discount_period_text is not None:
+        item.discount_period_text = payload.discount_period_text.strip() if payload.discount_period_text else None
+    if payload.member_only is not None:
+        item.member_only = payload.member_only
+    if payload.note is not None:
+        item.note = payload.note.strip() if payload.note else None
+    if payload.sort_order is not None:
+        item.sort_order = payload.sort_order
+    if payload.is_checked is not None:
+        item.is_checked = payload.is_checked
+        item.checked_at = datetime.now(timezone.utc) if payload.is_checked else None
+
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return serialize_shopping_item(item)
+
+
+@app.delete("/api/shopping/items/{item_id}", status_code=204)
+def delete_shopping_item(item_id: str, db: Session = Depends(get_db)):
+    item = db.get(ShoppingItem, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Shopping item not found")
+
+    db.delete(item)
+    db.commit()
+    return None
 
 
 def _extract_meta(html: str, base_url: str = "") -> dict:
