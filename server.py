@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 import httpx
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, LargeBinary, MetaData, String, Text, create_engine, func
 from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
 
@@ -1140,7 +1140,7 @@ def mobile_page():
 
 @app.get("/")
 def root():
-    return RedirectResponse(url="/pc")
+    return FileResponse(BASE_DIR / "home.html")
 
 app.mount("/", StaticFiles(directory=BASE_DIR, html=True), name="static")
 # Request headers
