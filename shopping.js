@@ -75,6 +75,7 @@ const state = {
   categoryLoading: false,
   categoryCloseTimer: null,
   categoryBrowseTimer: null,
+  categoryChildColumnOffset: 0,
   checkMode: false,
 };
 
@@ -263,10 +264,14 @@ function renderCategoryPicker() {
     return;
   }
 
-  getCategoryColumns().forEach((nodes, index) => {
+  const columns = getCategoryColumns();
+  columns.forEach((nodes, index) => {
     const column = document.createElement('div');
     column.className = 'category-picker__column';
     column.setAttribute('aria-label', `${index + 1}단계 카테고리`);
+    if (index > 0 && index === columns.length - 1 && state.categoryChildColumnOffset > 0) {
+      column.style.marginTop = `${state.categoryChildColumnOffset}px`;
+    }
 
     nodes.forEach(node => {
       const hasChildren = Array.isArray(node.children) && node.children.length > 0;
@@ -295,10 +300,16 @@ function renderCategoryPicker() {
 
       const browseChild = () => {
         if (!hasChildren || state.browsingCategoryPath === node.key) return;
+        if (categoryPickerList) {
+          const visibleTop = categoryPickerList.scrollTop;
+          const visibleHeight = categoryPickerList.clientHeight || 0;
+          const minimumVisibleHeight = Math.min(220, Math.max(120, visibleHeight * 0.65));
+          const maxTop = Math.max(visibleTop, visibleTop + visibleHeight - minimumVisibleHeight);
+          state.categoryChildColumnOffset = Math.max(0, Math.min(row.offsetTop, maxTop));
+        }
         state.browsingCategoryPath = node.key;
         renderCategoryPicker();
         if (categoryPickerList) {
-          categoryPickerList.scrollTop = 0;
           categoryPickerList.scrollLeft = categoryPickerList.scrollWidth;
         }
       };
@@ -347,6 +358,7 @@ function renderCategoryTrail() {
     event.preventDefault();
     event.stopPropagation();
     state.browsingCategoryPath = '';
+    state.categoryChildColumnOffset = 0;
     renderCategoryPicker();
   });
   categoryPickerTrail.appendChild(rootButton);
@@ -364,6 +376,7 @@ function renderCategoryTrail() {
       event.preventDefault();
       event.stopPropagation();
       state.browsingCategoryPath = key;
+      state.categoryChildColumnOffset = 0;
       renderCategoryPicker();
     });
     categoryPickerTrail.appendChild(button);
@@ -376,6 +389,7 @@ function toggleCategoryPicker() {
   if (willOpen) {
     window.clearTimeout(state.categoryCloseTimer);
     state.browsingCategoryPath = state.selectedCategoryPath;
+    state.categoryChildColumnOffset = 0;
     renderCategoryPicker();
     if (!state.categoryTree.length && !state.categoryLoading) {
       loadCategoryTree().catch(() => renderCategoryFilters());
