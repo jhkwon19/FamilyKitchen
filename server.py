@@ -1476,75 +1476,161 @@ COSTCO_CATEGORY_TOKEN_LABELS = {
     "batteries": "배터리",
     "beauty": "뷰티",
     "bedding": "침구",
+    "beans": "원두",
     "beverages": "음료",
     "bikes": "자전거",
+    "bidet": "비데",
+    "binders": "바인더",
+    "blenders": "블렌더",
     "blankets": "담요",
+    "boards": "보드",
     "blouse": "블라우스",
     "body": "바디",
+    "bread": "빵",
+    "butter": "버터",
+    "calculators": "계산기",
     "camping": "캠핑",
+    "canopies": "캐노피",
+    "carports": "차고",
     "care": "케어",
     "casual": "캐주얼",
     "cat": "고양이",
+    "cereal": "시리얼",
+    "cheese": "치즈",
     "chairs": "의자",
     "chilled": "냉장",
+    "clips": "클립",
     "cleaning": "청소",
     "clothing": "의류",
     "coffee": "커피",
+    "collagen": "콜라겐",
     "computer": "컴퓨터",
     "computers": "컴퓨터",
+    "coolers": "쿨러",
     "cookware": "조리도구",
+    "cream": "크림",
+    "cutting": "도마",
     "dining": "다이닝",
     "dog": "강아지",
     "dress": "원피스",
+    "dried": "건조",
     "drink": "음료",
+    "drip": "드립",
     "electronics": "전자제품",
+    "envelopes": "봉투",
     "equipment": "장비",
     "fashion": "패션",
+    "files": "파일",
+    "filing": "파일링",
+    "fish": "생선",
+    "flowers": "꽃",
     "fitness": "피트니스",
     "food": "식품",
     "foods": "식품",
     "for": "",
+    "forks": "포크",
     "frozen": "냉동",
+    "fruit": "과일",
+    "fruits": "과일",
     "furniture": "가구",
     "garden": "정원",
+    "gazebos": "가제보",
     "gift": "선물",
+    "glues": "접착제",
     "gold": "골드",
     "golf": "골프",
+    "grains": "곡물",
+    "greenhouses": "온실",
+    "grills": "그릴",
     "grill": "그릴",
+    "ground": "분쇄",
     "hardware": "공구",
+    "ham": "햄",
+    "hand": "손",
     "health": "건강",
+    "heaters": "히터",
+    "highlighters": "형광펜",
     "home": "홈",
     "household": "생활",
+    "ice": "아이스",
     "infant": "영유아",
+    "inks": "잉크",
+    "instant": "인스턴트",
     "jewelry": "주얼리",
+    "jerky": "육포",
+    "juicers": "주서기",
+    "kettles": "주전자",
     "kids": "아동",
+    "kimchi": "김치",
     "kitchen": "주방",
+    "knife": "칼",
+    "knifes": "칼",
+    "knives": "칼",
     "lawn": "잔디",
+    "laver": "김",
+    "laminators": "코팅기",
+    "labels": "라벨",
     "men": "남성",
+    "milk": "우유",
+    "mixers": "믹서",
     "mobile": "모바일",
+    "multi": "멀티",
+    "mussel": "홍합",
+    "network": "네트워크",
+    "nintendo": "닌텐도",
     "office": "사무",
+    "oils": "오일",
     "oral": "구강",
+    "other": "기타",
     "outdoor": "야외",
+    "ovens": "오븐",
     "pants": "바지",
     "patio": "파티오",
+    "pencils": "연필",
+    "peripherals": "주변기기",
     "pet": "반려동물",
     "pets": "반려동물",
+    "planters": "화분",
+    "pools": "수영장",
     "personal": "개인",
+    "printers": "프린터",
+    "propolis": "프로폴리스",
     "power": "전동",
     "processed": "가공",
+    "rice": "쌀",
     "room": "룸",
+    "sausage": "소시지",
+    "scissors": "가위",
     "seasonal": "계절",
     "security": "보안",
+    "seafood": "해산물",
+    "seafoods": "해산물",
+    "seaweed": "해조류",
+    "serving": "서빙",
+    "shredders": "문서세단기",
     "shoes": "신발",
+    "side": "반찬",
+    "skillets": "전기팬",
+    "software": "소프트웨어",
+    "soy": "두유",
+    "spas": "스파",
     "sports": "스포츠",
+    "spoons": "스푼",
+    "staples": "스테이플러",
     "storage": "수납",
     "supplement": "영양제",
     "supplies": "용품",
+    "surf": "서핑",
+    "tapes": "테이프",
     "tea": "차",
     "tires": "타이어",
+    "toners": "토너",
     "tools": "공구",
     "toys": "완구",
+    "vegetables": "채소",
     "video": "비디오",
+    "vitamin": "비타민",
+    "water": "물",
     "watches": "시계",
     "women": "여성",
     "womens": "여성",
@@ -1567,7 +1653,7 @@ def _costco_slug_to_korean_label(slug: str) -> str:
         translated = COSTCO_CATEGORY_TOKEN_LABELS.get(token.lower())
         if translated:
             translated_parts.append(translated)
-    return " ".join(translated_parts) if translated_parts else "기타"
+    return " ".join(translated_parts) if translated_parts else label.strip()
 
 
 def _dedupe_costco_category_parts(parts: List[str]) -> List[str]:
@@ -1587,7 +1673,7 @@ def _costco_url_category_parts(url: str) -> List[str]:
     parts = [part for part in path.split("/") if part]
     category_parts = []
     for part in parts:
-        if part == "p":
+        if part in {"p", "tire"}:
             break
         category_parts.append(part)
     parts = category_parts[:-1] if len(category_parts) > 1 else []
@@ -1605,6 +1691,12 @@ def _costco_url_to_category_path(url: str) -> str:
 
 def _costco_url_to_category_text(url: str) -> str:
     return " > ".join(_costco_slug_to_korean_label(part) for part in _costco_url_category_parts(url) if part.strip())
+
+
+def _costco_category_label_path_from_path(category_path: str) -> List[str]:
+    parts = [part for part in (category_path or "").strip("/").split("/") if part]
+    parts = _dedupe_costco_category_parts(parts)
+    return [_costco_slug_to_korean_label(part) for part in parts if part.strip()]
 
 
 def _build_costco_sitemap_entries(xml_text: str) -> List[dict]:
@@ -1655,16 +1747,23 @@ def _build_costco_category_tree(entries: List[dict]) -> List[dict]:
             continue
 
         siblings = root_nodes
-        current_path = []
+        current_key = ""
         for part in parts:
-            current_path.append(part)
-            key = "/".join(current_path)
-            if key not in siblings:
+            label = _costco_slug_to_korean_label(part)
+            existing_key = next(
+                (node_key for node_key, node in siblings.items() if node["label"] == label),
+                None,
+            )
+            if existing_key:
+                key = existing_key
+            else:
+                key = f"{current_key}/{part}" if current_key else part
                 siblings[key] = {
                     "key": key,
-                    "label": _costco_slug_to_korean_label(part),
+                    "label": label,
                     "children": {},
                 }
+            current_key = key
             siblings = siblings[key]["children"]
 
     def serialize(nodes: dict) -> List[dict]:
@@ -1692,7 +1791,7 @@ def _build_costco_category_tree_from_db(db: Session) -> Tuple[List[dict], int]:
     )
 
     for product_url, category_path, category_text in rows:
-        path = (category_path or _costco_url_to_category_path(product_url or "")).strip("/")
+        path = (_costco_url_to_category_path(product_url or "") or category_path or "").strip("/")
         if not path:
             continue
         entries.append(
@@ -1948,7 +2047,11 @@ def _matches_costco_category(item: dict, category: str) -> bool:
     if not item_path and item.get("url"):
         item_path = _costco_url_to_category_path(item["url"])
     item_path = (item_path or item.get("category_key") or "").strip().strip("/")
-    return item_path == category_path or item_path.startswith(f"{category_path}/")
+    if item_path == category_path or item_path.startswith(f"{category_path}/"):
+        return True
+    selected_labels = _costco_category_label_path_from_path(category_path)
+    item_labels = _costco_category_label_path_from_path(item_path)
+    return bool(selected_labels and item_labels[: len(selected_labels)] == selected_labels)
 
 
 async def _search_costco_official_catalog(query: str, limit: int = 12, category: str = "") -> dict:
@@ -2118,7 +2221,7 @@ def _costco_product_to_search_item(product: CostcoProduct) -> dict:
         and product.original_price is not None
         and product.original_price > product.price
     )
-    category_path = product.category_path or _costco_url_to_category_path(product.product_url)
+    category_path = _costco_url_to_category_path(product.product_url) or product.category_path or ""
     normalized_category_text = _costco_url_to_category_text(product.product_url)
     return {
         "id": product.id,
@@ -2179,6 +2282,34 @@ def _upsert_costco_product_from_item(db: Session, item: dict, synced_at: datetim
     return product
 
 
+def _costco_category_filter_paths_for_label_path(db: Session, category_path: str) -> List[str]:
+    selected_labels = _costco_category_label_path_from_path(category_path)
+    if not selected_labels:
+        return []
+
+    rows = (
+        db.query(CostcoProduct.category_path, CostcoProduct.product_url)
+        .filter(CostcoProduct.is_active.is_(True))
+        .all()
+    )
+    matched_paths = set()
+    selected_depth = len(selected_labels)
+    for product_path, product_url in rows:
+        normalized_path = (_costco_url_to_category_path(product_url or "") or "").strip("/")
+        stored_path = (product_path or "").strip("/")
+        path = normalized_path or stored_path
+        if not path:
+            continue
+        product_labels = _costco_category_label_path_from_path(path)
+        if product_labels[:selected_depth] == selected_labels:
+            if normalized_path:
+                matched_paths.add(normalized_path)
+            if stored_path:
+                matched_paths.add(stored_path)
+
+    return sorted(matched_paths)
+
+
 def _search_costco_products_db(db: Session, query: str, limit: int, category: str, offset: int = 0) -> Optional[dict]:
     active_query = db.query(CostcoProduct).filter(CostcoProduct.is_active.is_(True))
     total_count = active_query.count()
@@ -2195,22 +2326,14 @@ def _search_costco_products_db(db: Session, query: str, limit: int, category: st
     filtered = active_query
     category_path = category.strip().strip("/")
     if category_path:
-        category_paths = {category_path}
+        category_paths = set(_costco_category_filter_paths_for_label_path(db, category_path)) or {category_path}
         for alias, canonical in COSTCO_CATEGORY_ALIASES.items():
             if category_path == canonical or category_path.startswith(f"{canonical}/"):
                 category_paths.add(category_path.replace(canonical, alias, 1))
             elif category_path == alias or category_path.startswith(f"{alias}/"):
                 category_paths.add(category_path.replace(alias, canonical, 1))
 
-        category_filters = []
-        for path in category_paths:
-            category_filters.extend(
-                [
-                    CostcoProduct.category_path == path,
-                    CostcoProduct.category_path.like(f"{path}/%"),
-                ]
-            )
-        filtered = filtered.filter(or_(*category_filters))
+        filtered = filtered.filter(CostcoProduct.category_path.in_(category_paths))
 
     query_tokens = _tokenize_costco_text(query)
     for token in query_tokens:
