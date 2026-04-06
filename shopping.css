@@ -299,7 +299,7 @@ p {
 .toolbar__history {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   min-width: 0;
   gap: 4px;
   padding: 0;
@@ -1396,7 +1396,7 @@ p {
 
   .toolbar__history,
   .summary-card {
-    align-self: stretch;
+    align-self: start;
   }
 
   .panel--cart .toolbar__history-fields {
