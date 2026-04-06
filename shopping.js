@@ -4,6 +4,7 @@ const searchInput = document.getElementById('searchInput');
 const categoryFilterGroup = document.getElementById('categoryFilterGroup');
 const categoryPickerBtn = document.getElementById('categoryPickerBtn');
 const categoryPickerPanel = document.getElementById('categoryPickerPanel');
+const categoryPickerBackdrop = document.getElementById('categoryPickerBackdrop');
 const categoryPickerPath = document.getElementById('categoryPickerPath');
 const categoryPickerTrail = document.getElementById('categoryPickerTrail');
 const categoryPickerList = document.getElementById('categoryPickerList');
@@ -87,32 +88,49 @@ function bindEvents() {
   }
 
   if (categoryPickerBtn) {
-    categoryPickerBtn.addEventListener('click', () => {
+    categoryPickerBtn.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
       toggleCategoryPicker();
     });
   }
 
   if (categorySelectCurrentBtn) {
-    categorySelectCurrentBtn.addEventListener('click', async () => {
+    categorySelectCurrentBtn.addEventListener('click', async event => {
+      event.preventDefault();
+      event.stopPropagation();
       await selectCategoryPath(state.browsingCategoryPath);
     });
   }
 
   if (categoryPickerCloseBtn) {
-    categoryPickerCloseBtn.addEventListener('click', () => {
+    categoryPickerCloseBtn.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
       closeCategoryPicker();
     });
   }
 
   if (categoryClearBtn) {
-    categoryClearBtn.addEventListener('click', async () => {
+    categoryClearBtn.addEventListener('click', async event => {
+      event.preventDefault();
+      event.stopPropagation();
       await selectCategoryPath('');
     });
   }
 
+  if (categoryPickerBackdrop) {
+    categoryPickerBackdrop.addEventListener('click', () => {
+      closeCategoryPicker();
+    });
+  }
+
   document.addEventListener('click', event => {
-    if (!categoryFilterGroup || categoryPickerPanel?.hidden) return;
-    if (!categoryFilterGroup.contains(event.target)) {
+    if (categoryPickerPanel?.hidden) return;
+    if (
+      !categoryPickerPanel.contains(event.target)
+      && !categoryPickerBtn?.contains(event.target)
+    ) {
       closeCategoryPicker();
     }
   });
@@ -212,6 +230,7 @@ function renderCategoryPicker() {
   }
 
   children.forEach(node => {
+    const hasChildren = Array.isArray(node.children) && node.children.length > 0;
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'category-picker__item';
@@ -224,11 +243,13 @@ function renderCategoryPicker() {
     button.appendChild(label);
 
     const meta = document.createElement('em');
-    meta.textContent = node.children?.length ? '하위 메뉴' : '선택';
+    meta.textContent = hasChildren ? '하위 메뉴 ›' : '선택';
     button.appendChild(meta);
 
-    button.addEventListener('click', async () => {
-      if (node.children?.length) {
+    button.addEventListener('click', async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (hasChildren) {
         state.browsingCategoryPath = node.key;
         renderCategoryPicker();
         return;
@@ -245,7 +266,9 @@ function renderCategoryTrail() {
   const rootButton = document.createElement('button');
   rootButton.type = 'button';
   rootButton.textContent = '전체';
-  rootButton.addEventListener('click', () => {
+  rootButton.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
     state.browsingCategoryPath = '';
     renderCategoryPicker();
   });
@@ -260,7 +283,9 @@ function renderCategoryTrail() {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = node.label;
-    button.addEventListener('click', () => {
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
       state.browsingCategoryPath = key;
       renderCategoryPicker();
     });
@@ -276,12 +301,18 @@ function toggleCategoryPicker() {
     renderCategoryPicker();
   }
   categoryPickerPanel.hidden = !willOpen;
+  if (categoryPickerBackdrop) {
+    categoryPickerBackdrop.hidden = !willOpen;
+  }
   categoryPickerBtn.setAttribute('aria-expanded', String(willOpen));
 }
 
 function closeCategoryPicker() {
   if (!categoryPickerPanel || !categoryPickerBtn) return;
   categoryPickerPanel.hidden = true;
+  if (categoryPickerBackdrop) {
+    categoryPickerBackdrop.hidden = true;
+  }
   categoryPickerBtn.setAttribute('aria-expanded', 'false');
 }
 
