@@ -722,7 +722,7 @@ async function loadSearchResults(refresh = false, append = false) {
     state.hasMoreResults = state.results.length < state.matchedCount;
     state.mode = payload.mode || 'search';
     if (catalogStatus) {
-      catalogStatus.textContent = payload.message || '공식몰 검색 결과를 불러왔습니다.';
+      catalogStatus.textContent = '저장된 코스트코 상품 DB에서 검색했습니다.';
     }
   } catch (error) {
     if (requestId !== state.searchRequestId) return;
