@@ -1593,19 +1593,18 @@ p {
 
   .panel--cart {
     background:
+      linear-gradient(180deg, #d67d55, #bb5c3d) left top / 8px 100% no-repeat,
       linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 246, 235, 0.92)),
       var(--panel);
   }
 
   .panel--cart::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    z-index: 4;
-    width: 8px;
-    border-radius: 18px 0 0 18px;
-    background: linear-gradient(180deg, #d67d55, #bb5c3d);
-    pointer-events: none;
+    content: none;
+  }
+
+  .panel--cart .panel__header {
+    margin-left: -14px;
+    padding-left: 14px;
   }
 
   .results-toolbar {
