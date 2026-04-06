@@ -383,7 +383,7 @@ p {
 .category-picker {
   position: fixed;
   z-index: 90;
-  width: min(720px, calc(100vw - 32px));
+  width: min(780px, calc(100vw - 32px));
   max-height: min(620px, calc(100vh - 120px));
   border: 1px solid rgba(138, 96, 68, 0.18);
   border-radius: 16px;
@@ -443,15 +443,16 @@ p {
 
 .category-picker__list {
   display: flex;
-  gap: 8px;
+  gap: 0;
   max-height: min(440px, calc(100vh - 230px));
   overflow: auto;
   padding: 2px 2px 8px;
 }
 
 .category-picker__column {
-  min-width: 190px;
-  flex: 1 0 190px;
+  width: 240px;
+  min-width: 240px;
+  flex: 0 0 240px;
   display: grid;
   align-content: start;
   gap: 5px;
@@ -475,8 +476,23 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  cursor: pointer;
   text-align: left;
+}
+
+.category-picker__label {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .category-picker__item:hover,
@@ -486,17 +502,26 @@ p {
   background: rgba(255, 241, 226, 0.92);
 }
 
-.category-picker__item span {
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.category-picker__item em {
+.category-picker__drill {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(181, 84, 52, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 252, 246, 0.9);
   color: var(--accent-deep);
   font-size: 11px;
-  font-style: normal;
   font-weight: 800;
-  white-space: nowrap;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.category-picker__drill:empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.category-picker__drill:hover {
+  background: rgba(255, 233, 214, 0.95);
 }
 
 .category-picker__empty {
@@ -506,6 +531,7 @@ p {
 }
 
 .category-picker__actions {
+  justify-content: flex-end;
   border-top: 1px solid rgba(138, 96, 68, 0.14);
   padding-top: 10px;
 }
@@ -514,7 +540,7 @@ p {
   min-height: 34px;
   padding: 7px 12px;
   font-size: 12px;
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .category-picker__actions .btn:disabled {

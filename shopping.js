@@ -8,7 +8,6 @@ const categoryPickerBackdrop = document.getElementById('categoryPickerBackdrop')
 const categoryPickerPath = document.getElementById('categoryPickerPath');
 const categoryPickerTrail = document.getElementById('categoryPickerTrail');
 const categoryPickerList = document.getElementById('categoryPickerList');
-const categorySelectCurrentBtn = document.getElementById('categorySelectCurrentBtn');
 const categoryPickerCloseBtn = document.getElementById('categoryPickerCloseBtn');
 const categoryClearBtn = document.getElementById('categoryClearBtn');
 const refreshCatalogBtn = document.getElementById('refreshCatalogBtn');
@@ -68,6 +67,7 @@ const state = {
   searchRequestId: 0,
   categoryLoading: false,
   categoryCloseTimer: null,
+  categoryBrowseTimer: null,
 };
 
 if (budgetInput) {
@@ -113,14 +113,6 @@ function bindEvents() {
       event.preventDefault();
       event.stopPropagation();
       toggleCategoryPicker();
-    });
-  }
-
-  if (categorySelectCurrentBtn) {
-    categorySelectCurrentBtn.addEventListener('click', async event => {
-      event.preventDefault();
-      event.stopPropagation();
-      await selectCategoryPath(state.browsingCategoryPath);
     });
   }
 
@@ -260,9 +252,6 @@ function renderCategoryPicker() {
   const currentLabel = getCategoryLabel(state.browsingCategoryPath);
 
   categoryPickerPath.textContent = currentLabel || '전체 카테고리';
-  if (categorySelectCurrentBtn) {
-    categorySelectCurrentBtn.disabled = !state.browsingCategoryPath;
-  }
   renderCategoryTrail();
 
   categoryPickerList.innerHTML = '';
@@ -288,23 +277,28 @@ function renderCategoryPicker() {
 
     nodes.forEach(node => {
       const hasChildren = Array.isArray(node.children) && node.children.length > 0;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'category-picker__item';
+      const row = document.createElement('div');
+      row.className = 'category-picker__item';
       if (node.key === state.selectedCategoryPath) {
-        button.classList.add('is-selected');
+        row.classList.add('is-selected');
       }
       if (isCategoryPathActive(node.key)) {
-        button.classList.add('is-active');
+        row.classList.add('is-active');
       }
 
-      const label = document.createElement('span');
+      const label = document.createElement('button');
+      label.type = 'button';
+      label.className = 'category-picker__label';
       label.textContent = node.label;
-      button.appendChild(label);
 
-      const meta = document.createElement('em');
-      meta.textContent = hasChildren ? '›' : '선택';
-      button.appendChild(meta);
+      const meta = document.createElement('button');
+      meta.type = 'button';
+      meta.className = 'category-picker__drill';
+      meta.textContent = hasChildren ? '›' : '';
+      meta.setAttribute('aria-label', hasChildren ? `${node.label} 하위 메뉴 보기` : `${node.label} 선택`);
+
+      row.appendChild(label);
+      row.appendChild(meta);
 
       const browseChild = () => {
         if (!hasChildren || state.browsingCategoryPath === node.key) return;
@@ -312,18 +306,34 @@ function renderCategoryPicker() {
         renderCategoryPicker();
       };
 
-      button.addEventListener('mouseenter', browseChild);
-      button.addEventListener('focus', browseChild);
-      button.addEventListener('click', async event => {
+      row.addEventListener('mouseenter', () => {
+        if (!hasChildren) return;
+        window.clearTimeout(state.categoryBrowseTimer);
+        state.categoryBrowseTimer = window.setTimeout(browseChild, 180);
+      });
+      label.addEventListener('focus', () => {
+        if (!hasChildren) return;
+        window.clearTimeout(state.categoryBrowseTimer);
+        state.categoryBrowseTimer = window.setTimeout(browseChild, 180);
+      });
+      label.addEventListener('click', async event => {
         event.preventDefault();
         event.stopPropagation();
-        if (hasChildren) {
-          browseChild();
-          return;
-        }
         await selectCategoryPath(node.key);
       });
-      column.appendChild(button);
+      meta.addEventListener('click', event => {
+        if (!hasChildren) return;
+        event.preventDefault();
+        event.stopPropagation();
+        browseChild();
+      });
+      meta.addEventListener('mouseenter', event => {
+        if (hasChildren) {
+          event.stopPropagation();
+          browseChild();
+        }
+      });
+      column.appendChild(row);
     });
 
     categoryPickerList.appendChild(column);
@@ -387,6 +397,7 @@ function toggleCategoryPicker() {
 function closeCategoryPicker() {
   if (!categoryPickerPanel || !categoryPickerBtn) return;
   window.clearTimeout(state.categoryCloseTimer);
+  window.clearTimeout(state.categoryBrowseTimer);
   categoryPickerPanel.hidden = true;
   if (categoryPickerBackdrop) {
     categoryPickerBackdrop.hidden = true;
@@ -430,7 +441,7 @@ function positionCategoryPicker() {
   const rect = categoryPickerBtn.getBoundingClientRect();
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  const width = Math.min(720, Math.max(420, viewportWidth - 32));
+  const width = Math.min(780, Math.max(320, viewportWidth - 32));
   const left = Math.max(16, Math.min(rect.left, viewportWidth - width - 16));
   const top = Math.max(12, Math.min(rect.bottom + 8, viewportHeight - 120));
 
