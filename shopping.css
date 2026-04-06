@@ -78,7 +78,7 @@ p {
   margin: 0;
 }
 
-.demo-shell {
+.shopping-shell {
   padding: 0 0 64px;
 }
 
@@ -722,7 +722,7 @@ p {
 }
 
 @media (max-width: 720px) {
-  .demo-shell {
+  .shopping-shell {
     padding: 0 0 36px;
   }
 

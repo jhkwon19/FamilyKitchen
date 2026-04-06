@@ -15,8 +15,8 @@ const budgetDelta = document.getElementById('budgetDelta');
 const resultCardTemplate = document.getElementById('resultCardTemplate');
 const cartItemTemplate = document.getElementById('cartItemTemplate');
 
-const CART_STORAGE_KEY = 'costco-demo-cart-v1';
-const BUDGET_STORAGE_KEY = 'costco-demo-budget-v1';
+const CART_STORAGE_KEY = 'shopping-cart-v1';
+const BUDGET_STORAGE_KEY = 'shopping-budget-v1';
 
 const state = {
   results: [],
@@ -86,7 +86,7 @@ async function loadSearchResults(refresh = false) {
       limit: '12',
     });
     if (refresh) params.set('refresh', 'true');
-    const url = `/api/costco-demo/search?${params.toString()}`;
+    const url = `/api/shopping/search?${params.toString()}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error('카탈로그 응답 실패');
     const payload = await response.json();
@@ -96,7 +96,7 @@ async function loadSearchResults(refresh = false) {
     state.matchedCount = Number(payload.matched_count) || 0;
     state.mode = payload.mode || 'search';
     if (catalogStatus) {
-      catalogStatus.textContent = payload.sample_note || '공식몰 검색 결과를 불러왔습니다.';
+      catalogStatus.textContent = payload.message || '공식몰 검색 결과를 불러왔습니다.';
     }
   } catch (error) {
     state.results = [];
@@ -104,7 +104,7 @@ async function loadSearchResults(refresh = false) {
     state.matchedCount = 0;
     state.mode = 'error';
     if (catalogStatus) {
-      catalogStatus.textContent = '공식몰 검색 데모를 불러오지 못했습니다.';
+      catalogStatus.textContent = '공식몰 검색 결과를 불러오지 못했습니다.';
     }
   }
 

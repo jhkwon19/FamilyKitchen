@@ -111,13 +111,13 @@ RecipeIn.update_forward_refs()
 RecipeOut.update_forward_refs()
 
 MAX_USER_PHOTO_BYTES = 8 * 1024 * 1024
-COSTCO_DEMO_CACHE_TTL = timedelta(minutes=30)
-COSTCO_DEMO_CACHE = {"items": [], "fetched_at": None}
-COSTCO_DEMO_SITEMAP_CACHE = {"entries": [], "fetched_at": None}
-COSTCO_DEMO_PRODUCT_CACHE_TTL = timedelta(hours=12)
-COSTCO_DEMO_PRODUCT_CACHE = {}
+COSTCO_SHOPPING_CACHE_TTL = timedelta(minutes=30)
+COSTCO_SHOPPING_CACHE = {"items": [], "fetched_at": None}
+COSTCO_SHOPPING_SITEMAP_CACHE = {"entries": [], "fetched_at": None}
+COSTCO_SHOPPING_PRODUCT_CACHE_TTL = timedelta(hours=12)
+COSTCO_SHOPPING_PRODUCT_CACHE = {}
 KST = timezone(timedelta(hours=9))
-COSTCO_DEMO_FALLBACK_URLS = [
+COSTCO_SHOPPING_FALLBACK_URLS = [
     "https://www.costco.co.kr/p/692714",
     "https://www.costco.co.kr/Appliances/Seasonal-Appliances/FansAir-Circulator/Dyson-HotCool-Fan-Heater-AM09/p/672973",
     "https://www.costco.co.kr/ClothingBagsAccessories/Clothing-for-Men/Pants-for-Men/Guess-Mens-Jeans/p/677768",
@@ -844,36 +844,36 @@ async def _search_costco_official_catalog(query: str, limit: int = 12) -> dict:
         "items": items[:limit],
         "matched_count": matched_count,
         "mode": "search",
-        "sample_note": "공식몰 전체 검색 결과를 바로 불러와 가격과 제품 정보를 예산 테스트용으로 보여줍니다.",
+        "message": "공식몰 전체 검색 결과를 바로 불러와 가격과 제품 정보를 예산 확인용으로 보여줍니다.",
     }
 
 
-async def _load_costco_demo_sitemap(force_refresh: bool = False) -> List[dict]:
-    fetched_at = COSTCO_DEMO_SITEMAP_CACHE["fetched_at"]
+async def _load_costco_shopping_sitemap(force_refresh: bool = False) -> List[dict]:
+    fetched_at = COSTCO_SHOPPING_SITEMAP_CACHE["fetched_at"]
     if (
         not force_refresh
-        and COSTCO_DEMO_SITEMAP_CACHE["entries"]
+        and COSTCO_SHOPPING_SITEMAP_CACHE["entries"]
         and fetched_at
-        and datetime.utcnow() - fetched_at < COSTCO_DEMO_CACHE_TTL
+        and datetime.utcnow() - fetched_at < COSTCO_SHOPPING_CACHE_TTL
     ):
-        return COSTCO_DEMO_SITEMAP_CACHE["entries"]
+        return COSTCO_SHOPPING_SITEMAP_CACHE["entries"]
 
     sitemap_text, _, content_type = await _fetch_html("https://www.costco.co.kr/sitemap_korea_product.xml")
     entries = _build_costco_sitemap_entries(sitemap_text if "xml" in content_type or sitemap_text else sitemap_text)
-    COSTCO_DEMO_SITEMAP_CACHE["entries"] = entries
-    COSTCO_DEMO_SITEMAP_CACHE["fetched_at"] = datetime.utcnow()
+    COSTCO_SHOPPING_SITEMAP_CACHE["entries"] = entries
+    COSTCO_SHOPPING_SITEMAP_CACHE["fetched_at"] = datetime.utcnow()
     return entries
 
 
-async def _load_costco_demo_catalog(force_refresh: bool = False) -> List[dict]:
-    fetched_at = COSTCO_DEMO_CACHE["fetched_at"]
+async def _load_costco_shopping_catalog(force_refresh: bool = False) -> List[dict]:
+    fetched_at = COSTCO_SHOPPING_CACHE["fetched_at"]
     if (
         not force_refresh
-        and COSTCO_DEMO_CACHE["items"]
+        and COSTCO_SHOPPING_CACHE["items"]
         and fetched_at
-        and datetime.utcnow() - fetched_at < COSTCO_DEMO_CACHE_TTL
+        and datetime.utcnow() - fetched_at < COSTCO_SHOPPING_CACHE_TTL
     ):
-        return COSTCO_DEMO_CACHE["items"]
+        return COSTCO_SHOPPING_CACHE["items"]
 
     items: List[dict] = []
     homepage_html, final_url, content_type = await _fetch_html("https://www.costco.co.kr/")
@@ -882,7 +882,7 @@ async def _load_costco_demo_catalog(force_refresh: bool = False) -> List[dict]:
 
     if len(items) < 8:
         fallback_items = []
-        for url in COSTCO_DEMO_FALLBACK_URLS:
+        for url in COSTCO_SHOPPING_FALLBACK_URLS:
             try:
                 html, resolved_url, ctype = await _fetch_html(url)
                 if "text/html" not in ctype:
@@ -898,14 +898,14 @@ async def _load_costco_demo_catalog(force_refresh: bool = False) -> List[dict]:
             if item["url"] not in existing_urls:
                 items.append(item)
 
-    COSTCO_DEMO_CACHE["items"] = items
-    COSTCO_DEMO_CACHE["fetched_at"] = datetime.utcnow()
+    COSTCO_SHOPPING_CACHE["items"] = items
+    COSTCO_SHOPPING_CACHE["fetched_at"] = datetime.utcnow()
     return items
 
 
 async def _load_costco_product_details(url: str, force_refresh: bool = False) -> Optional[dict]:
-    cached = COSTCO_DEMO_PRODUCT_CACHE.get(url)
-    if cached and not force_refresh and datetime.utcnow() - cached["fetched_at"] < COSTCO_DEMO_PRODUCT_CACHE_TTL:
+    cached = COSTCO_SHOPPING_PRODUCT_CACHE.get(url)
+    if cached and not force_refresh and datetime.utcnow() - cached["fetched_at"] < COSTCO_SHOPPING_PRODUCT_CACHE_TTL:
         return cached["item"]
 
     try:
@@ -915,7 +915,7 @@ async def _load_costco_product_details(url: str, force_refresh: bool = False) ->
         item = _extract_costco_product_item(html, str(final_url))
         if not item:
             return cached["item"] if cached else None
-        COSTCO_DEMO_PRODUCT_CACHE[url] = {"item": item, "fetched_at": datetime.utcnow()}
+        COSTCO_SHOPPING_PRODUCT_CACHE[url] = {"item": item, "fetched_at": datetime.utcnow()}
         return item
     except Exception:
         return cached["item"] if cached else None
@@ -930,7 +930,7 @@ def _score_costco_entry(entry: dict, query: str) -> int:
 
     search_blob = entry.get("search_blob", "")
     search_compact = entry.get("search_compact", "")
-    cached = COSTCO_DEMO_PRODUCT_CACHE.get(entry["url"])
+    cached = COSTCO_SHOPPING_PRODUCT_CACHE.get(entry["url"])
     if cached:
         cached_title = cached["item"].get("title", "")
         search_blob = f"{search_blob} {_normalize_costco_text(cached_title)}"
@@ -967,19 +967,19 @@ def _fallback_costco_item(entry: dict) -> dict:
     }
 
 
-async def _search_costco_demo_catalog(query: str, limit: int = 12, refresh: bool = False) -> dict:
-    entries = await _load_costco_demo_sitemap(force_refresh=refresh)
-    fetched_at = COSTCO_DEMO_SITEMAP_CACHE["fetched_at"]
+async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: bool = False) -> dict:
+    entries = await _load_costco_shopping_sitemap(force_refresh=refresh)
+    fetched_at = COSTCO_SHOPPING_SITEMAP_CACHE["fetched_at"]
 
     if not query.strip():
-        featured = await _load_costco_demo_catalog(force_refresh=refresh)
+        featured = await _load_costco_shopping_catalog(force_refresh=refresh)
         return {
             "items": featured[:limit],
             "matched_count": len(featured),
             "total_catalog_count": len(entries),
             "fetched_at": fetched_at.isoformat() if fetched_at else None,
             "mode": "featured",
-            "sample_note": "전체 상품 수는 sitemap으로 확인하고, 기본 화면은 공식몰 메인에 노출된 상품 일부를 먼저 보여줍니다.",
+            "message": "전체 상품 수는 sitemap으로 확인하고, 기본 화면은 공식몰 메인에 노출된 상품 일부를 먼저 보여줍니다.",
         }
 
     try:
@@ -1014,7 +1014,7 @@ async def _search_costco_demo_catalog(query: str, limit: int = 12, refresh: bool
             "total_catalog_count": len(entries),
             "fetched_at": fetched_at.isoformat() if fetched_at else None,
             "mode": "search-fallback",
-            "sample_note": "공식 검색 응답이 불안정해 sitemap 후보와 상품 페이지 보강 방식으로 임시 전환했습니다.",
+            "message": "공식 검색 응답이 불안정해 sitemap 후보와 상품 페이지 보강 방식으로 임시 전환했습니다.",
         }
 
 
@@ -1069,17 +1069,17 @@ async def preview(url: HttpUrl):
         return {"title": "", "description": "", "site": "", "image": "", "snippet": ""}
 
 
-@app.get("/api/costco-demo/catalog")
-async def costco_demo_catalog(refresh: bool = False):
+@app.get("/api/shopping/catalog")
+async def shopping_catalog(refresh: bool = False):
     try:
-        payload = await _search_costco_demo_catalog("", limit=24, refresh=refresh)
+        payload = await _search_costco_shopping_catalog("", limit=24, refresh=refresh)
         return {
             "items": payload["items"],
             "count": len(payload["items"]),
             "total_catalog_count": payload["total_catalog_count"],
             "matched_count": payload["matched_count"],
             "fetched_at": payload["fetched_at"],
-            "sample_note": payload["sample_note"],
+            "message": payload["message"],
             "mode": payload["mode"],
         }
     except Exception:
@@ -1089,23 +1089,23 @@ async def costco_demo_catalog(refresh: bool = False):
             "total_catalog_count": 0,
             "matched_count": 0,
             "fetched_at": None,
-            "sample_note": "공식몰 샘플 상품을 불러오지 못했습니다.",
+            "message": "공식몰 상품 목록을 불러오지 못했습니다.",
             "mode": "error",
         }
 
 
-@app.get("/api/costco-demo/search")
-async def costco_demo_search(q: str = "", limit: int = 12, refresh: bool = False):
+@app.get("/api/shopping/search")
+async def shopping_search(q: str = "", limit: int = 12, refresh: bool = False):
     safe_limit = max(1, min(limit, 24))
     try:
-        payload = await _search_costco_demo_catalog(q, limit=safe_limit, refresh=refresh)
+        payload = await _search_costco_shopping_catalog(q, limit=safe_limit, refresh=refresh)
         return {
             "items": payload["items"],
             "count": len(payload["items"]),
             "total_catalog_count": payload["total_catalog_count"],
             "matched_count": payload["matched_count"],
             "fetched_at": payload["fetched_at"],
-            "sample_note": payload["sample_note"],
+            "message": payload["message"],
             "mode": payload["mode"],
             "query": q,
         }
@@ -1116,21 +1116,16 @@ async def costco_demo_search(q: str = "", limit: int = 12, refresh: bool = False
             "total_catalog_count": 0,
             "matched_count": 0,
             "fetched_at": None,
-            "sample_note": "공식몰 검색 데모를 불러오지 못했습니다.",
+            "message": "공식몰 검색 결과를 불러오지 못했습니다.",
             "mode": "error",
             "query": q,
         }
 
 
 # Serve static front-end files after API routes
-@app.get("/costco-demo")
-def costco_demo_page():
-    return FileResponse(BASE_DIR / "costco-demo.html")
-
-
 @app.get("/shopping")
 def shopping_page():
-    return FileResponse(BASE_DIR / "costco-demo.html")
+    return FileResponse(BASE_DIR / "shopping.html")
 
 
 @app.get("/pc")
