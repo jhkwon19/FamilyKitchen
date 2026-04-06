@@ -766,16 +766,8 @@ function renderProductSyncStatus() {
     return;
   }
 
-  productSyncStatus.replaceChildren();
-  const summaryLine = document.createElement('span');
-  summaryLine.textContent = `상품 DB 동기화 ${synced.toLocaleString('ko-KR')} / ${total.toLocaleString('ko-KR')} · 가격 ${priced.toLocaleString('ko-KR')} · 할인 ${discounts.toLocaleString('ko-KR')} · 이미지 ${images.toLocaleString('ko-KR')}`;
-  productSyncStatus.appendChild(summaryLine);
-  if (latestText) {
-    const latestLine = document.createElement('span');
-    latestLine.className = 'sync-status__latest';
-    latestLine.textContent = latestText;
-    productSyncStatus.appendChild(latestLine);
-  }
+  const summaryText = `상품 DB 동기화 ${synced.toLocaleString('ko-KR')} / ${total.toLocaleString('ko-KR')} · 가격 ${priced.toLocaleString('ko-KR')} · 할인 ${discounts.toLocaleString('ko-KR')} · 이미지 ${images.toLocaleString('ko-KR')}`;
+  productSyncStatus.textContent = latestText ? `${summaryText} · ${latestText}` : summaryText;
 }
 
 function renderResults() {
