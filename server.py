@@ -1188,7 +1188,6 @@ COSTCO_CATEGORY_ROOTS = {
 
 COSTCO_CATEGORY_ROOT_ORDER = [
     "Foods",
-    "Food",
     "BeautyHouseholdPersonal-Care",
     "HomeKitchen",
     "Appliances",
@@ -1206,6 +1205,10 @@ COSTCO_CATEGORY_ROOT_ORDER = [
     "Gift-Cards-Tickets",
     "GrillsAccessories",
 ]
+
+COSTCO_CATEGORY_ALIASES = {
+    "Food": "Foods",
+}
 
 COSTCO_CATEGORY_LABELS = {
     "Appliances": "가전",
@@ -1567,6 +1570,18 @@ def _costco_slug_to_korean_label(slug: str) -> str:
     return " ".join(translated_parts) if translated_parts else "기타"
 
 
+def _dedupe_costco_category_parts(parts: List[str]) -> List[str]:
+    deduped = []
+    for part in parts:
+        if not part:
+            continue
+        part = COSTCO_CATEGORY_ALIASES.get(part, part)
+        if deduped and _costco_slug_to_korean_label(deduped[-1]) == _costco_slug_to_korean_label(part):
+            continue
+        deduped.append(part)
+    return deduped
+
+
 def _costco_url_category_parts(url: str) -> List[str]:
     path = unquote(urlparse(url).path or "")
     parts = [part for part in path.split("/") if part]
@@ -1575,7 +1590,8 @@ def _costco_url_category_parts(url: str) -> List[str]:
         if part == "p":
             break
         category_parts.append(part)
-    return category_parts[:-1] if len(category_parts) > 1 else []
+    parts = category_parts[:-1] if len(category_parts) > 1 else []
+    return _dedupe_costco_category_parts(parts)
 
 
 def _costco_url_to_category_key(url: str) -> str:
@@ -1634,6 +1650,7 @@ def _build_costco_category_tree(entries: List[dict]) -> List[dict]:
         category_path = entry.get("category_path") or _costco_url_to_category_path(entry.get("url", ""))
         parts = category_path.split("/")
         parts = [part for part in parts if part]
+        parts = _dedupe_costco_category_parts(parts)
         if not parts or parts[0] not in COSTCO_CATEGORY_ROOTS:
             continue
 
@@ -2102,6 +2119,7 @@ def _costco_product_to_search_item(product: CostcoProduct) -> dict:
         and product.original_price > product.price
     )
     category_path = product.category_path or _costco_url_to_category_path(product.product_url)
+    normalized_category_text = _costco_url_to_category_text(product.product_url)
     return {
         "id": product.id,
         "title": product.product_name,
@@ -2116,7 +2134,7 @@ def _costco_product_to_search_item(product: CostcoProduct) -> dict:
         "url": product.product_url,
         "category_key": category_path.split("/", 1)[0] if category_path else "",
         "category_path": category_path,
-        "category_text": product.category_text or _costco_url_to_category_text(product.product_url),
+        "category_text": normalized_category_text or product.category_text or "",
         "image_url": product.image_url or "",
         "member_only": bool(product.member_only),
         "source": "db-cache",
@@ -2177,12 +2195,22 @@ def _search_costco_products_db(db: Session, query: str, limit: int, category: st
     filtered = active_query
     category_path = category.strip().strip("/")
     if category_path:
-        filtered = filtered.filter(
-            or_(
-                CostcoProduct.category_path == category_path,
-                CostcoProduct.category_path.like(f"{category_path}/%"),
+        category_paths = {category_path}
+        for alias, canonical in COSTCO_CATEGORY_ALIASES.items():
+            if category_path == canonical or category_path.startswith(f"{canonical}/"):
+                category_paths.add(category_path.replace(canonical, alias, 1))
+            elif category_path == alias or category_path.startswith(f"{alias}/"):
+                category_paths.add(category_path.replace(alias, canonical, 1))
+
+        category_filters = []
+        for path in category_paths:
+            category_filters.extend(
+                [
+                    CostcoProduct.category_path == path,
+                    CostcoProduct.category_path.like(f"{path}/%"),
+                ]
             )
-        )
+        filtered = filtered.filter(or_(*category_filters))
 
     query_tokens = _tokenize_costco_text(query)
     for token in query_tokens:
