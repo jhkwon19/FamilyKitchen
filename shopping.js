@@ -1,7 +1,7 @@
 const catalogStatus = document.getElementById('catalogStatus');
 const resultsMeta = document.getElementById('resultsMeta');
 const searchInput = document.getElementById('searchInput');
-const categoryFilterSelect = document.getElementById('categoryFilterSelect');
+const categoryFilterGroup = document.getElementById('categoryFilterGroup');
 const refreshCatalogBtn = document.getElementById('refreshCatalogBtn');
 const budgetInput = document.getElementById('budgetInput');
 const resetCartBtn = document.getElementById('resetCartBtn');
@@ -39,6 +39,8 @@ const state = {
   currentListYear: null,
   currentListMonth: null,
   budgetSaveTimer: null,
+  categoryTree: [],
+  selectedCategoryPath: '',
 };
 
 if (budgetInput) {
@@ -50,6 +52,7 @@ boot();
 
 async function boot() {
   await loadHistoryMonths();
+  await loadCategoryTree();
   await loadSearchResults();
   render();
 }
@@ -70,12 +73,6 @@ function bindEvents() {
       refreshCatalogBtn.disabled = true;
       await loadSearchResults(true);
       refreshCatalogBtn.disabled = false;
-    });
-  }
-
-  if (categoryFilterSelect) {
-    categoryFilterSelect.addEventListener('change', async () => {
-      await loadSearchResults();
     });
   }
 
@@ -123,6 +120,94 @@ function bindEvents() {
   if (deleteListBtn) {
     deleteListBtn.addEventListener('click', async () => {
       await deleteSelectedShoppingList();
+    });
+  }
+}
+
+async function loadCategoryTree() {
+  if (!categoryFilterGroup) return;
+  try {
+    const payload = await requestJson('/api/shopping/categories');
+    state.categoryTree = Array.isArray(payload.items) ? payload.items : [];
+  } catch (error) {
+    state.categoryTree = [];
+  }
+  renderCategoryFilters();
+}
+
+function renderCategoryFilters() {
+  if (!categoryFilterGroup) return;
+
+  categoryFilterGroup.innerHTML = '';
+  if (!state.categoryTree.length) {
+    const field = document.createElement('label');
+    field.className = 'field field--category';
+    field.innerHTML = '<span>카테고리</span><select disabled><option>카테고리 없음</option></select>';
+    categoryFilterGroup.appendChild(field);
+    return;
+  }
+  renderCategorySelect({
+    nodes: state.categoryTree,
+    level: 0,
+    selectedPath: state.selectedCategoryPath,
+  });
+}
+
+function renderCategorySelect({ nodes, level, selectedPath }) {
+  if (!categoryFilterGroup || !nodes.length) return;
+
+  const selectedParts = selectedPath ? selectedPath.split('/') : [];
+  const selectedValue = selectedParts.slice(0, level + 1).join('/');
+  const label = level === 0 ? '카테고리' : `하위 메뉴 ${level}`;
+
+  const field = document.createElement('label');
+  field.className = 'field field--category';
+
+  const span = document.createElement('span');
+  span.textContent = label;
+
+  const select = document.createElement('select');
+  select.dataset.categoryLevel = String(level);
+
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = level === 0 ? '전체' : '전체 하위';
+  select.appendChild(defaultOption);
+
+  nodes.forEach(node => {
+    const option = document.createElement('option');
+    option.value = node.key;
+    option.textContent = node.label;
+    select.appendChild(option);
+  });
+
+  if (selectedValue && nodes.some(node => node.key === selectedValue)) {
+    select.value = selectedValue;
+  }
+
+  select.addEventListener('change', async () => {
+    const nextValue = select.value;
+    if (nextValue) {
+      state.selectedCategoryPath = nextValue;
+    } else if (level === 0) {
+      state.selectedCategoryPath = '';
+    } else {
+      state.selectedCategoryPath = selectedParts.slice(0, level).join('/');
+    }
+    renderCategoryFilters();
+    await loadSearchResults();
+  });
+
+  field.appendChild(span);
+  field.appendChild(select);
+  categoryFilterGroup.appendChild(field);
+
+  const selectedNode = nodes.find(node => node.key === select.value);
+  if (selectedNode && Array.isArray(selectedNode.children) && selectedNode.children.length) {
+    renderCategorySelect({
+      nodes: selectedNode.children,
+      level: level + 1,
+      selectedPath,
     });
   }
 }
@@ -345,7 +430,7 @@ function render() {
 
 async function loadSearchResults(refresh = false) {
   const query = searchInput?.value || '';
-  const category = categoryFilterSelect?.value || '';
+  const category = state.selectedCategoryPath || '';
   if (catalogStatus) {
     catalogStatus.textContent = refresh
       ? '공식몰 검색 결과를 다시 불러오는 중입니다.'
@@ -384,14 +469,19 @@ async function loadSearchResults(refresh = false) {
 function renderResults() {
   if (!searchResults) return;
   const query = searchInput?.value?.trim() || '';
+  const categoryLabel = getSelectedCategoryLabel();
   const results = state.results;
 
   if (resultsMeta) {
     const syncedText = state.fetchedAt
       ? `최근 동기화 ${new Date(state.fetchedAt).toLocaleString('ko-KR')}`
       : '최근 동기화 기록 없음';
-    if (query) {
+    if (query || categoryLabel) {
+      const scope = [categoryLabel, query ? `"${query}"` : ''].filter(Boolean).join(' · ');
       resultsMeta.textContent = `전체 상품 ${state.totalCatalogCount.toLocaleString('ko-KR')}개 중 ${state.matchedCount.toLocaleString('ko-KR')}개 매칭 · 현재 ${results.length}개 표시 · ${syncedText}`;
+      if (scope) {
+        resultsMeta.textContent = `${scope} · ${resultsMeta.textContent}`;
+      }
     } else {
       resultsMeta.textContent = `전체 상품 ${state.totalCatalogCount.toLocaleString('ko-KR')}개 · 현재 ${results.length}개 표시 · ${syncedText}`;
     }
@@ -399,7 +489,7 @@ function renderResults() {
 
   searchResults.innerHTML = '';
   if (!results.length) {
-    searchResults.appendChild(buildEmptyState(query ? '검색 결과가 없습니다. 영문 상품명이나 브랜드 키워드도 시도해보세요.' : '기본 노출 상품이 없습니다.'));
+    searchResults.appendChild(buildEmptyState(query || categoryLabel ? '검색 결과가 없습니다. 다른 하위 카테고리나 키워드도 시도해보세요.' : '기본 노출 상품이 없습니다.'));
     return;
   }
 
@@ -749,6 +839,20 @@ function saveBudget() {
 
 function normalize(value) {
   return String(value || '').toLowerCase().replace(/\s+/g, '');
+}
+
+function getSelectedCategoryLabel() {
+  if (!state.selectedCategoryPath) return '';
+  const labels = [];
+  let nodes = state.categoryTree;
+  state.selectedCategoryPath.split('/').forEach((part, index, parts) => {
+    const key = parts.slice(0, index + 1).join('/');
+    const node = nodes.find(item => item.key === key);
+    if (!node) return;
+    labels.push(node.label);
+    nodes = Array.isArray(node.children) ? node.children : [];
+  });
+  return labels.join(' > ');
 }
 
 function formatWon(value) {

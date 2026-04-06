@@ -1111,38 +1111,387 @@ def _costco_slug_to_label(url: str) -> str:
     return re.sub(r"\s+", " ", label).strip()
 
 
+COSTCO_CATEGORY_ROOTS = {
+    "Appliances",
+    "BabyKidsToysPets",
+    "BeautyHouseholdPersonal-Care",
+    "ClothingBagsAccessories",
+    "ElectronicsComputers",
+    "Food",
+    "Foods",
+    "FurnitureBeddingHome",
+    "Gift-Cards-Tickets",
+    "GrillsAccessories",
+    "HardwareAutomotive",
+    "HealthSupplement",
+    "HomeKitchen",
+    "JewelryWatchesAccessories",
+    "PatioLawnGarden",
+    "SportsFitnessCamping",
+    "StationeryOffice-Supplies",
+    "TiresAutomotive",
+}
+
+COSTCO_CATEGORY_ROOT_ORDER = [
+    "Foods",
+    "Food",
+    "BeautyHouseholdPersonal-Care",
+    "HomeKitchen",
+    "Appliances",
+    "ElectronicsComputers",
+    "FurnitureBeddingHome",
+    "ClothingBagsAccessories",
+    "BabyKidsToysPets",
+    "SportsFitnessCamping",
+    "PatioLawnGarden",
+    "HardwareAutomotive",
+    "TiresAutomotive",
+    "StationeryOffice-Supplies",
+    "HealthSupplement",
+    "JewelryWatchesAccessories",
+    "Gift-Cards-Tickets",
+    "GrillsAccessories",
+]
+
 COSTCO_CATEGORY_LABELS = {
     "Appliances": "가전",
     "Seasonal-Appliances": "계절가전",
     "FansAir-Circulator": "선풍기/공기순환기",
     "Air-ConditionersCooling": "에어컨/냉방",
-    "Electronics": "컴퓨터/전자제품",
-    "TVsElectronics": "TV/전자제품",
-    "Computers": "컴퓨터",
+    "Kitchen-Miscellaneous": "주방 소형가전",
+    "Beauty-ToolsHealth-Care": "뷰티/건강가전",
+    "Refrigerators": "냉장고",
+    "Home-Appliances": "생활가전",
+    "WashersDryersClothing-Care-System": "세탁기/건조기/의류관리기",
+    "Air-Treatment": "공기관리",
+    "Appliance-Packages": "가전 패키지",
+    "Commercial-Appliances": "상업용 가전",
     "Foods": "식품",
+    "Food": "식품",
+    "Processed-Food": "가공식품",
+    "Snack": "스낵",
     "Fresh-Foods": "신선식품",
     "MeatSeafood": "정육/해산물",
+    "MeatEggs": "정육/계란",
+    "FruitVegetables": "과일/채소",
     "Bakery": "베이커리",
     "SaucesCondiments": "소스/양념",
     "SaucesDressings": "소스/드레싱",
-    "Snacks": "스낵",
+    "CondimentsSpices": "양념/향신료",
     "Beverages": "음료",
+    "CoffeeTeaDrink": "커피/차/음료",
     "Frozen-Foods": "냉동식품",
-    "HealthBeauty": "건강/뷰티",
-    "HouseholdPet": "생활/반려동물",
-    "FurnitureBedding": "가구/침구",
+    "Chilled-Foods": "냉장식품",
+    "Dried-Products": "건조식품",
+    "RiceGrains": "쌀/곡물",
+    "Instant-Food": "즉석식품",
+    "PastaNoodles": "파스타/면",
+    "Canned-Goods": "통조림",
+    "CookieCracker": "쿠키/크래커",
+    "CandyGum": "캔디/껌",
+    "Chocolates-Bars": "초콜릿/바",
+    "SoftConcentrated-Drinks": "탄산/농축음료",
+    "Juice": "주스",
+    "Capsule-Coffee": "캡슐커피",
+    "TeaLiquid-Tea": "차/액상차",
+    "FurnitureBeddingHome": "가구/침구/홈",
+    "Living-Room": "거실",
+    "Living-Room-Furniture": "거실가구",
+    "Sofas": "소파",
+    "Home-Decor": "홈데코",
+    "CarpetsRugs": "카펫/러그",
+    "MirrorsCandlesFramesDecor-Accessories": "거울/캔들/액자/장식소품",
+    "Curtains": "커튼",
+    "Towels": "타월",
+    "Blinds": "블라인드",
+    "BathKitchen-Mats": "욕실/주방 매트",
+    "Sofa-Pads": "소파패드",
+    "Bedding": "침구",
+    "Toppers-Pads-Spreads": "토퍼/패드/스프레드",
+    "Pillows": "베개",
+    "ComfortersBlanketsThrows": "이불/담요/스로우",
+    "CushionAccessories": "쿠션/액세서리",
+    "Bedroom-Furniture": "침실가구",
+    "Beds-Mattresses": "침대/매트리스",
+    "Beds": "침대",
+    "StoneLoess-Beds": "돌/황토침대",
+    "Drawer": "서랍장",
+    "KitchenDining-Furniture": "주방/다이닝 가구",
+    "Dining-Table-Sets": "식탁세트",
+    "Office-Furniture": "사무용 가구",
+    "Office-Chairs": "사무용 의자",
+    "Lighting": "조명",
+    "InfantKids-Furniture": "유아동 가구",
     "ClothingBagsAccessories": "의류/가방/잡화",
     "Clothing-for-Men": "남성의류",
     "Clothing-for-Women": "여성의류",
     "Pants-for-Men": "남성 바지",
-    "BabyKidsToys": "유아동/완구",
-    "SportsFitness": "스포츠/피트니스",
-    "PatioLawnGarden": "정원/야외",
+    "PantsSkirtDress-for-Women": "여성 바지/스커트/원피스",
+    "ShirtsBlouseTop-for-Women": "여성 셔츠/블라우스/상의",
+    "ShirtsTopKnit-for-Men": "남성 셔츠/상의/니트",
+    "Activewear-for-Women": "여성 액티브웨어",
+    "Knitwear-for-Women": "여성 니트웨어",
+    "Outerwear-for-Women": "여성 아우터",
+    "Outerwear-for-Men": "남성 아우터",
+    "Loungewear-for-Women": "여성 라운지웨어",
+    "Underwear-for-Women": "여성 언더웨어",
+    "Underwear-for-Men": "남성 언더웨어",
+    "Underwear-TopSet-for-Women": "여성 언더웨어 상의/세트",
+    "SocksHosiery-for-Women": "여성 양말/스타킹",
+    "Socks-for-Men": "남성 양말",
+    "Womens-Shoes": "여성 신발",
+    "Casual-Shoes-For-Women": "여성 캐주얼화",
+    "SlippersSandal-for-Women": "여성 슬리퍼/샌들",
+    "Athletic-Shoes-for-Women": "여성 운동화",
+    "Boots-for-Women": "여성 부츠",
+    "Shoes-for-Men": "남성 신발",
+    "Casual-Shoes-for-Men": "남성 캐주얼화",
+    "SlippersSandal-for-Men": "남성 슬리퍼/샌들",
+    "Athletic-Shoes-for-Men": "남성 운동화",
+    "Kids-ClothingUnderwear": "아동 의류/언더웨어",
+    "Kids-Basic": "아동 기본의류",
+    "Kids-Top": "아동 상의",
+    "Kids-Bottom": "아동 하의",
+    "Kids-TopBottomDress": "아동 상하의/원피스",
+    "Kids-Outerwear": "아동 아우터",
+    "Childrens-Shoes": "아동 신발",
+    "Basics": "기본 잡화",
+    "HatMufflers": "모자/머플러",
+    "Fashion-Accessories": "패션잡화",
+    "Luggages": "여행가방",
+    "Checked-Luggage": "위탁수하물 가방",
+    "Backpacks-Bags": "백팩/가방",
+    "Optical": "안경/옵티컬",
+    "ElectronicsComputers": "컴퓨터/전자제품",
+    "Televisions": "TV",
+    "204cm-TV": "204cm TV",
+    "178-203cm-TV": "178-203cm TV",
+    "Apple": "애플",
+    "MonitorsPrinters": "모니터/프린터",
+    "Monitors": "모니터",
+    "AudioVideo": "오디오/비디오",
+    "AudioSpeakers": "오디오/스피커",
+    "Mobile": "모바일",
+    "Computer-Accessories": "컴퓨터 액세서리",
+    "KeyboardsComputer-Mice": "키보드/마우스",
+    "Musical-Instruments": "악기",
+    "Game": "게임",
+    "Cameras": "카메라",
+    "Security-Cameras": "보안카메라",
+    "LaptopsDesktops": "노트북/데스크탑",
+    "Tablets": "태블릿",
+    "BeautyHouseholdPersonal-Care": "뷰티/생활/개인용품",
+    "Beauty": "뷰티",
+    "CleansingRemover": "클렌징/리무버",
+    "LotionCream": "로션/크림",
+    "EssenceSerumAmpoule": "에센스/세럼/앰플",
+    "PackMask": "팩/마스크",
+    "BathBodyOral-Care": "욕실/바디/구강용품",
+    "Oral-Care": "구강용품",
+    "Body-Wash": "바디워시",
+    "Hair-Care": "헤어케어",
+    "ShampooConditioner": "샴푸/컨디셔너",
+    "TreatmentDyeing": "트리트먼트/염색",
+    "Feminine-HygieneIncontinence": "여성위생/요실금용품",
+    "BathFacial-Tissue": "화장지/티슈",
+    "Baby-BodyOral-Care": "유아 바디/구강용품",
+    "BabyKidsToysPets": "유아동/완구/반려동물",
+    "Pet-Supplies": "반려동물용품",
+    "Dog-Foods": "강아지 사료",
+    "Cat-Foods": "고양이 사료",
+    "Toys": "완구",
+    "Building-SetsBlocks": "블록/조립완구",
+    "InfantKids-Care": "영유아 케어",
+    "Playmat": "놀이매트",
+    "Diapers": "기저귀",
+    "Kids-ClothingAccessories": "아동 의류/잡화",
+    "HomeKitchen": "홈/주방",
+    "Dining": "다이닝",
+    "Thermal": "보온/보냉용품",
+    "Dinnerware": "식기",
+    "BowlsPlates": "볼/접시",
+    "CupMugWater-Bottle": "컵/머그/물병",
+    "Kitchen-Accessories": "주방용품",
+    "Kitchen-AccessoriesUtensils": "주방도구/용품",
+    "Plastic-Wraps": "랩/호일",
+    "Coffe-AccessoriesBakeware": "커피용품/베이킹웨어",
+    "CutleryCutting-Board": "커트러리/도마",
+    "Cookware": "조리도구",
+    "Frying-Pan-Grill": "프라이팬/그릴",
+    "Cleaning-Products": "청소용품",
+    "Laundry-Detergent": "세탁세제",
+    "Cleaning-Chemicals": "청소세제",
+    "Bathroom-Organization": "욕실 정리용품",
+    "HardwareAutomotive": "공구/자동차",
     "Automotive": "자동차용품",
-    "BusinessDelivery": "비즈니스 배송",
-    "JewelryWatches": "주얼리/시계",
-    "GiftCardsTickets": "상품권/티켓",
-    "OfficeProducts": "사무용품",
+    "Auto-Accessories": "자동차 액세서리",
+    "WashWax": "세차/왁스",
+    "StorageOrganization": "수납/정리",
+    "Household-Storage": "생활수납",
+    "Shelving": "선반",
+    "Home-Improvement": "홈 인테리어/보수",
+    "FlooringCeilingWallpaperDIYs": "바닥/천장/벽지/DIY",
+    "Power-ToolsWork-Equipment": "전동공구/작업장비",
+    "Work-ToolsSafety-Supplies": "작업공구/안전용품",
+    "Security": "보안",
+    "Safes": "금고",
+    "Batteries": "배터리",
+    "LightbulbsOutdoor-Lighting": "전구/야외조명",
+    "TiresAutomotive": "타이어/자동차",
+    "Tires": "타이어",
+    "Event-Tires": "행사 타이어",
+    "PatioLawnGarden": "정원/야외",
+    "Garden-ToolsEquipment": "정원 공구/장비",
+    "HoseAccessories": "호스/액세서리",
+    "Patio-Furniture": "야외가구",
+    "TablesChair": "테이블/의자",
+    "Flower-BouquetsLive-Plants": "꽃다발/생화식물",
+    "Live-Plants": "생화식물",
+    "GardeningDecor": "정원 장식",
+    "Outdoor-Storage": "야외 수납",
+    "Outdoor-Structures": "야외 구조물",
+    "ParasolsShade-Sails": "파라솔/그늘막",
+    "Outdoor-Power-Equipment": "야외 전동장비",
+    "SportsFitnessCamping": "스포츠/피트니스/캠핑",
+    "Golf": "골프",
+    "Golf-Accessories": "골프 액세서리",
+    "Camping": "캠핑",
+    "BoatingWater-Sports": "보트/수상스포츠",
+    "HikingTrekking": "하이킹/트레킹",
+    "FitnessExercise": "피트니스/운동",
+    "BikesScootersRide-Ons": "자전거/스쿠터/승용완구",
+    "Outdoor-Sports": "야외스포츠",
+    "StationeryOffice-Supplies": "문구/사무용품",
+    "WritingStationeries": "필기/문구",
+    "SketchbooksNotebooks": "스케치북/노트",
+    "Pens": "펜",
+    "Office-Supplies": "사무용품",
+    "Storage-Solutions": "수납 솔루션",
+    "Machines": "사무기기",
+    "Office-Papers": "사무용지",
+    "HealthSupplement": "건강/영양제",
+    "Other-Health-Supplement": "기타 건강보조식품",
+    "Other-Health-Supplements": "기타 건강보조식품",
+    "Home-Health-CareFirst-Aid": "가정 건강관리/응급처치",
+    "Home-Health-Care": "가정 건강관리",
+    "VitaminMineral": "비타민/미네랄",
+    "Health": "건강",
+    "Probiotics": "유산균",
+    "DietBeauty-Supplement": "다이어트/뷰티 영양제",
+    "Omega-3Krill-Oil": "오메가3/크릴오일",
+    "Kids-Supplement": "어린이 영양제",
+    "Joint": "관절",
+    "JewelryWatchesAccessories": "주얼리/시계/잡화",
+    "Necklaces": "목걸이",
+    "Gold-Necklaces": "골드 목걸이",
+    "Rings": "반지",
+    "Gold-Rings": "골드 반지",
+    "Diamond-Rings": "다이아몬드 반지",
+    "Bracelets": "팔찌",
+    "Gold-Bracelets": "골드 팔찌",
+    "Earrings": "귀걸이",
+    "24K-Gold-Silver": "24K 골드/실버",
+    "Fashion-Jewelry": "패션 주얼리",
+    "Womens-Watches": "여성 시계",
+    "One-of-a-Kind-Jewelry": "원오브어카인드 주얼리",
+    "Gift-Cards-Tickets": "상품권/티켓",
+    "Gift-Cards": "상품권",
+    "Tickets": "티켓",
+    "GrillsAccessories": "그릴/액세서리",
+    "Charcoal-Grill": "숯불 그릴",
+    "GasElectric-Grill": "가스/전기 그릴",
+    "Grill-Accessories": "그릴 액세서리",
+}
+
+COSTCO_CATEGORY_TOKEN_LABELS = {
+    "accessories": "액세서리",
+    "activewear": "액티브웨어",
+    "aid": "응급처치",
+    "air": "공기",
+    "apple": "애플",
+    "appliances": "가전",
+    "audio": "오디오",
+    "auto": "자동차",
+    "automotive": "자동차",
+    "baby": "유아",
+    "bags": "가방",
+    "bath": "욕실",
+    "batteries": "배터리",
+    "beauty": "뷰티",
+    "bedding": "침구",
+    "beverages": "음료",
+    "bikes": "자전거",
+    "blankets": "담요",
+    "blouse": "블라우스",
+    "body": "바디",
+    "camping": "캠핑",
+    "care": "케어",
+    "casual": "캐주얼",
+    "cat": "고양이",
+    "chairs": "의자",
+    "chilled": "냉장",
+    "cleaning": "청소",
+    "clothing": "의류",
+    "coffee": "커피",
+    "computer": "컴퓨터",
+    "computers": "컴퓨터",
+    "cookware": "조리도구",
+    "dining": "다이닝",
+    "dog": "강아지",
+    "dress": "원피스",
+    "drink": "음료",
+    "electronics": "전자제품",
+    "equipment": "장비",
+    "fashion": "패션",
+    "fitness": "피트니스",
+    "food": "식품",
+    "foods": "식품",
+    "for": "",
+    "frozen": "냉동",
+    "furniture": "가구",
+    "garden": "정원",
+    "gift": "선물",
+    "gold": "골드",
+    "golf": "골프",
+    "grill": "그릴",
+    "hardware": "공구",
+    "health": "건강",
+    "home": "홈",
+    "household": "생활",
+    "infant": "영유아",
+    "jewelry": "주얼리",
+    "kids": "아동",
+    "kitchen": "주방",
+    "lawn": "잔디",
+    "men": "남성",
+    "mobile": "모바일",
+    "office": "사무",
+    "oral": "구강",
+    "outdoor": "야외",
+    "pants": "바지",
+    "patio": "파티오",
+    "pet": "반려동물",
+    "pets": "반려동물",
+    "personal": "개인",
+    "power": "전동",
+    "processed": "가공",
+    "room": "룸",
+    "seasonal": "계절",
+    "security": "보안",
+    "shoes": "신발",
+    "sports": "스포츠",
+    "storage": "수납",
+    "supplement": "영양제",
+    "supplies": "용품",
+    "tea": "차",
+    "tires": "타이어",
+    "tools": "공구",
+    "toys": "완구",
+    "video": "비디오",
+    "watches": "시계",
+    "women": "여성",
+    "womens": "여성",
+    "work": "작업",
 }
 
 
@@ -1151,7 +1500,17 @@ def _costco_slug_to_korean_label(slug: str) -> str:
         return COSTCO_CATEGORY_LABELS[slug]
     label = slug.replace("-", " ").replace("_", " ").replace("+", " ")
     label = re.sub(r"([a-z])([A-Z])", r"\1 \2", label)
-    return re.sub(r"\s+", " ", label).strip()
+    translated_parts = []
+    for token in re.split(r"[^0-9A-Za-z]+", label):
+        if not token:
+            continue
+        if token.isdigit():
+            translated_parts.append(token)
+            continue
+        translated = COSTCO_CATEGORY_TOKEN_LABELS.get(token.lower())
+        if translated:
+            translated_parts.append(translated)
+    return " ".join(translated_parts) if translated_parts else "기타"
 
 
 def _costco_url_category_parts(url: str) -> List[str]:
@@ -1168,6 +1527,10 @@ def _costco_url_category_parts(url: str) -> List[str]:
 def _costco_url_to_category_key(url: str) -> str:
     parts = _costco_url_category_parts(url)
     return parts[0] if parts else ""
+
+
+def _costco_url_to_category_path(url: str) -> str:
+    return "/".join(_costco_url_category_parts(url))
 
 
 def _costco_url_to_category_text(url: str) -> str:
@@ -1193,6 +1556,8 @@ def _build_costco_sitemap_entries(xml_text: str) -> List[dict]:
                 "url": url,
                 "label": label,
                 "category_key": _costco_url_to_category_key(url),
+                "category_path": _costco_url_to_category_path(url),
+                "category_text": _costco_url_to_category_text(url),
                 "search_blob": _normalize_costco_text(search_blob),
                 "search_compact": _compact_costco_text(search_blob),
             }
@@ -1200,6 +1565,50 @@ def _build_costco_sitemap_entries(xml_text: str) -> List[dict]:
         seen_urls.add(url)
 
     return entries
+
+
+def _costco_category_sort_key(node: dict) -> Tuple[int, str]:
+    root = (node.get("key") or "").split("/", 1)[0]
+    root_index = COSTCO_CATEGORY_ROOT_ORDER.index(root) if root in COSTCO_CATEGORY_ROOT_ORDER else len(COSTCO_CATEGORY_ROOT_ORDER)
+    return root_index, node.get("label") or ""
+
+
+def _build_costco_category_tree(entries: List[dict]) -> List[dict]:
+    root_nodes = {}
+
+    for entry in entries:
+        parts = (entry.get("category_path") or "").split("/")
+        parts = [part for part in parts if part]
+        if not parts or parts[0] not in COSTCO_CATEGORY_ROOTS:
+            continue
+
+        siblings = root_nodes
+        current_path = []
+        for part in parts:
+            current_path.append(part)
+            key = "/".join(current_path)
+            if key not in siblings:
+                siblings[key] = {
+                    "key": key,
+                    "label": _costco_slug_to_korean_label(part),
+                    "children": {},
+                }
+            siblings = siblings[key]["children"]
+
+    def serialize(nodes: dict) -> List[dict]:
+        serialized = []
+        for node in nodes.values():
+            serialized.append(
+                {
+                    "key": node["key"],
+                    "label": node["label"],
+                    "children": serialize(node["children"]),
+                }
+            )
+        serialized.sort(key=_costco_category_sort_key)
+        return serialized
+
+    return serialize(root_nodes)
 
 
 def _extract_costco_homepage_items(html: str) -> List[dict]:
@@ -1243,6 +1652,7 @@ def _extract_costco_homepage_items(html: str) -> List[dict]:
                 "price_value": _parse_costco_price(price_text),
                 "url": url,
                 "category_key": _costco_url_to_category_key(url),
+                "category_path": _costco_url_to_category_path(url),
                 "category_text": _costco_url_to_category_text(url),
                 "image_url": image_url,
                 "member_only": member_only,
@@ -1293,6 +1703,7 @@ def _extract_costco_product_item(html: str, final_url: str) -> Optional[dict]:
         "price_value": _parse_costco_price(price_text),
         "url": final_url,
         "category_key": _costco_url_to_category_key(final_url),
+        "category_path": _costco_url_to_category_path(final_url),
         "category_text": _costco_url_to_category_text(final_url),
         "image_url": image_url,
         "member_only": member_only,
@@ -1426,6 +1837,7 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
         "discount_period_text": discount_period_text,
         "url": absolute_product_url,
         "category_key": _costco_url_to_category_key(absolute_product_url),
+        "category_path": _costco_url_to_category_path(absolute_product_url),
         "category_text": _costco_url_to_category_text(absolute_product_url),
         "image_url": image_url,
         "member_only": member_only,
@@ -1436,7 +1848,9 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
 def _matches_costco_category(item: dict, category: str) -> bool:
     if not category:
         return True
-    return (item.get("category_key") or "") == category
+    category_path = category.strip().strip("/")
+    item_path = (item.get("category_path") or item.get("category_key") or "").strip().strip("/")
+    return item_path == category_path or item_path.startswith(f"{category_path}/")
 
 
 async def _search_costco_official_catalog(query: str, limit: int = 12, category: str = "") -> dict:
@@ -1592,6 +2006,7 @@ def _fallback_costco_item(entry: dict) -> dict:
         "price_value": None,
         "url": entry["url"],
         "category_key": entry.get("category_key") or _costco_url_to_category_key(entry["url"]),
+        "category_path": entry.get("category_path") or _costco_url_to_category_path(entry["url"]),
         "category_text": _costco_url_to_category_text(entry["url"]),
         "image_url": "",
         "member_only": False,
@@ -1639,6 +2054,8 @@ async def _search_costco_shopping_catalog(query: str, limit: int = 12, refresh: 
 
     try:
         payload = await _search_costco_official_catalog(query, limit=limit, category=category)
+        if category and not payload.get("items"):
+            raise ValueError("No official search items matched selected category.")
         payload["total_catalog_count"] = len(entries)
         payload["fetched_at"] = fetched_at.isoformat() if fetched_at else None
         return payload
@@ -1746,6 +2163,24 @@ async def shopping_catalog(refresh: bool = False):
             "fetched_at": None,
             "message": "공식몰 상품 목록을 불러오지 못했습니다.",
             "mode": "error",
+        }
+
+
+@app.get("/api/shopping/categories")
+async def shopping_categories(refresh: bool = False):
+    try:
+        entries = await _load_costco_shopping_sitemap(force_refresh=refresh)
+        fetched_at = COSTCO_SHOPPING_SITEMAP_CACHE["fetched_at"]
+        return {
+            "items": _build_costco_category_tree(entries),
+            "count": len(entries),
+            "fetched_at": fetched_at.isoformat() if fetched_at else None,
+        }
+    except Exception:
+        return {
+            "items": [],
+            "count": 0,
+            "fetched_at": None,
         }
 
 

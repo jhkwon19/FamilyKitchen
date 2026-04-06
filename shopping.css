@@ -319,7 +319,7 @@ p {
 }
 
 .field--category {
-  max-width: 170px;
+  max-width: none;
 }
 
 .field--month {
@@ -336,10 +336,18 @@ p {
 
 .results-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 240px) minmax(0, 170px) auto;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 12px;
+}
+
+.category-filter {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+  align-items: end;
+  min-width: 0;
 }
 
 .field,
@@ -995,6 +1003,10 @@ p {
 
   .toolbar__budget,
   .results-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .category-filter {
     grid-template-columns: 1fr;
   }
 
