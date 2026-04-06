@@ -1111,6 +1111,25 @@ def _costco_slug_to_label(url: str) -> str:
     return re.sub(r"\s+", " ", label).strip()
 
 
+def _costco_url_to_category_text(url: str) -> str:
+    path = unquote(urlparse(url).path or "")
+    parts = [part for part in path.split("/") if part]
+    category_parts = []
+    for part in parts:
+        if part == "p":
+            break
+        category_parts.append(part)
+
+    if len(category_parts) <= 1:
+        return ""
+
+    return " > ".join(
+        re.sub(r"\s+", " ", part.replace("-", " ").replace("_", " ").replace("+", " ")).strip()
+        for part in category_parts[:-1]
+        if part.strip()
+    )
+
+
 def _build_costco_sitemap_entries(xml_text: str) -> List[dict]:
     urls = re.findall(r"<loc>(https://www\.costco\.co\.kr[^<]+/p/[^<]+)</loc>", xml_text)
     entries = []
@@ -1178,6 +1197,7 @@ def _extract_costco_homepage_items(html: str) -> List[dict]:
                 "price_text": price_text or ("회원 전용" if member_only else ""),
                 "price_value": _parse_costco_price(price_text),
                 "url": url,
+                "category_text": _costco_url_to_category_text(url),
                 "image_url": image_url,
                 "member_only": member_only,
                 "source": "homepage",
@@ -1226,6 +1246,7 @@ def _extract_costco_product_item(html: str, final_url: str) -> Optional[dict]:
         "price_text": price_text or ("회원 전용" if member_only else ""),
         "price_value": _parse_costco_price(price_text),
         "url": final_url,
+        "category_text": _costco_url_to_category_text(final_url),
         "image_url": image_url,
         "member_only": member_only,
         "source": "fallback",
@@ -1340,6 +1361,7 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
         price_text = "회원 전용"
 
     product_url = product.get("url") or ""
+    absolute_product_url = urljoin("https://www.costco.co.kr", product_url)
     image_url = _pick_costco_image_url(product.get("images") or [])
 
     return {
@@ -1355,7 +1377,8 @@ def _build_costco_search_api_item(product: dict) -> Optional[dict]:
         "discount_start_at": discount_start_at,
         "discount_end_at": discount_end_at,
         "discount_period_text": discount_period_text,
-        "url": urljoin("https://www.costco.co.kr", product_url),
+        "url": absolute_product_url,
+        "category_text": _costco_url_to_category_text(absolute_product_url),
         "image_url": image_url,
         "member_only": member_only,
         "source": "official-search",
@@ -1512,6 +1535,7 @@ def _fallback_costco_item(entry: dict) -> dict:
         "price_text": "가격은 결과 클릭 시 확인",
         "price_value": None,
         "url": entry["url"],
+        "category_text": _costco_url_to_category_text(entry["url"]),
         "image_url": "",
         "member_only": False,
         "source": "sitemap",

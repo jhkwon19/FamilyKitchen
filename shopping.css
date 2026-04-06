@@ -621,7 +621,8 @@ p {
 .product-card__original,
 .product-card__discount,
 .product-card__period,
-.product-card__note {
+.product-card__note,
+.product-card__category {
   margin: 0;
   font-size: 11px;
   line-height: 1.4;
@@ -652,6 +653,12 @@ p {
 
 .product-card__note {
   color: var(--muted);
+}
+
+.product-card__category {
+  color: var(--muted);
+  font-weight: 700;
+  word-break: keep-all;
 }
 
 .product-card__actions {

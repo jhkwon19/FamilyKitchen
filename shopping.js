@@ -403,6 +403,7 @@ function renderResults() {
     const price = fragment.querySelector('[data-price]');
     const discountPeriod = fragment.querySelector('[data-discount-period]');
     const note = fragment.querySelector('[data-note]');
+    const category = fragment.querySelector('[data-category]');
     const addBtn = fragment.querySelector('[data-add]');
     const openLink = fragment.querySelector('[data-open]');
 
@@ -439,6 +440,13 @@ function renderResults() {
       note.textContent = '';
     }
     openLink.href = item.url;
+    if (item.category_text) {
+      category.hidden = false;
+      category.textContent = `카테고리 ${item.category_text}`;
+    } else {
+      category.hidden = true;
+      category.textContent = '';
+    }
 
     addBtn.addEventListener('click', async () => {
       addBtn.disabled = true;
