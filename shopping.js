@@ -66,6 +66,7 @@ const state = {
   selectedCategoryPath: '',
   browsingCategoryPath: '',
   searchRequestId: 0,
+  categoryLoading: false,
 };
 
 if (budgetInput) {
@@ -76,10 +77,10 @@ bindEvents();
 boot();
 
 async function boot() {
-  await loadHistoryMonths();
-  await loadCategoryTree();
-  await loadSearchResults();
   render();
+  loadHistoryMonths().then(() => render()).catch(() => render());
+  loadCategoryTree().catch(() => renderCategoryFilters());
+  loadSearchResults().catch(() => renderResults());
 }
 
 function bindEvents() {
@@ -205,11 +206,16 @@ function bindEvents() {
 
 async function loadCategoryTree() {
   if (!categoryFilterGroup) return;
+  if (state.categoryLoading) return;
+  state.categoryLoading = true;
+  renderCategoryFilters();
   try {
     const payload = await requestJson('/api/shopping/categories');
     state.categoryTree = Array.isArray(payload.items) ? payload.items : [];
   } catch (error) {
     state.categoryTree = [];
+  } finally {
+    state.categoryLoading = false;
   }
   renderCategoryFilters();
 }
@@ -235,6 +241,13 @@ function renderCategoryPicker() {
   renderCategoryTrail();
 
   categoryPickerList.innerHTML = '';
+  if (state.categoryLoading) {
+    const loading = document.createElement('p');
+    loading.className = 'category-picker__empty';
+    loading.textContent = '카테고리를 불러오는 중입니다.';
+    categoryPickerList.appendChild(loading);
+    return;
+  }
   if (!children.length) {
     const empty = document.createElement('p');
     empty.className = 'category-picker__empty';
@@ -313,6 +326,9 @@ function toggleCategoryPicker() {
   if (willOpen) {
     state.browsingCategoryPath = state.selectedCategoryPath;
     renderCategoryPicker();
+    if (!state.categoryTree.length && !state.categoryLoading) {
+      loadCategoryTree().catch(() => renderCategoryFilters());
+    }
   }
   categoryPickerPanel.hidden = !willOpen;
   if (categoryPickerBackdrop) {
