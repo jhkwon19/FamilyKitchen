@@ -515,7 +515,7 @@ p {
 
 .category-picker__list {
   display: flex;
-  gap: 0;
+  gap: 8px;
   max-height: min(380px, calc(100vh - 210px));
   overflow: auto;
   padding: 1px 1px 6px;
@@ -528,12 +528,10 @@ p {
   display: grid;
   align-content: start;
   gap: 3px;
-  padding: 0 6px 0 0;
-  border-right: 1px solid rgba(138, 96, 68, 0.12);
+  padding: 0;
 }
 
 .category-picker__column:last-child {
-  border-right: 0;
   padding-right: 0;
 }
 
